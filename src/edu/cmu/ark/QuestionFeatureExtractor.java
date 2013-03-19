@@ -1,7 +1,8 @@
 package edu.cmu.ark;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import edu.stanford.nlp.trees.Tree;
 
@@ -24,10 +25,10 @@ public class QuestionFeatureExtractor {
      * at the output question, the source, and the answer phrase
      * (not features like, e.g., whether adjunct phrases were removed).
      */
-    public void extractFinalFeatures(Question q) {
+    public void extractFinalFeatures(final Question q) {
         String tregexOpStr;
 
-        Tree tree = q.getTree();
+        final Tree tree = q.getTree();
 
         // leading modifiers in the question (e.g., "Despite the cold, who went outside?")
         if (Question.getFeatureNames().contains("numLeadingModifiersQuestion")) {
@@ -51,10 +52,10 @@ public class QuestionFeatureExtractor {
         extractLangModelFeatures(q);
     }
 
-    private void extractWHFeatures(Question q) {
-        Tree tree = q.getTree();
+    private void extractWHFeatures(final Question q) {
+        final Tree tree = q.getTree();
 
-        String yield = AnalysisUtilities.getCleanedUpYield(tree).toLowerCase();
+        final String yield = AnalysisUtilities.getCleanedUpYield(tree).toLowerCase();
 
         // if the question is a do question, none of these should fire
         if (yield.indexOf("did") == 0) {
@@ -118,10 +119,10 @@ public class QuestionFeatureExtractor {
          */
     }
 
-    private void extractVaguenessFeatures(Question q) {
-        Tree tree = q.getTree();
-        Tree sourceTree = q.getSourceTree();
-        Tree answerPhraseTree = q.getAnswerPhraseTree();
+    private void extractVaguenessFeatures(final Question q) {
+        final Tree tree = q.getTree();
+        final Tree sourceTree = q.getSourceTree();
+        final Tree answerPhraseTree = q.getAnswerPhraseTree();
 
         // number of potentially vague NPs like pronouns "the company
         if (Question.getFeatureNames().contains("numVagueNPsSource")) {
@@ -144,8 +145,8 @@ public class QuestionFeatureExtractor {
         }
     }
 
-    private void extractTenseFeatures(Question q) {
-        Tree tree = q.getTree();
+    private void extractTenseFeatures(final Question q) {
+        final Tree tree = q.getTree();
 
         String tregexOpStr;
         // main verb tense
@@ -199,153 +200,186 @@ public class QuestionFeatureExtractor {
         }
     }
 
-    private void extractLengthFeatures(Question q) {
-        Tree answerPhraseTree = q.getAnswerPhraseTree();
-        Tree tree = q.getTree();
-        Tree sourceTree = q.getSourceTree();
+    private void extractLengthFeatures(final Question q) {
+        final Tree answerPhraseTree = q.getAnswerPhraseTree();
+        final Tree tree = q.getTree();
+        final Tree sourceTree = q.getSourceTree();
 
-        if (Question.getFeatureNames().contains("lengthQuestion"))
+        if (Question.getFeatureNames().contains("lengthQuestion")) {
             extractCountAndGreaterThanFeatures(q, "lengthQuestion", 4, 10, tree.yield().size());
-        if (Question.getFeatureNames().contains("lengthSource"))
+        }
+        if (Question.getFeatureNames().contains("lengthSource")) {
             extractCountAndGreaterThanFeatures(q, "lengthSource", 4, 10, sourceTree.yield().size());
+        }
 
         if (answerPhraseTree != null) {
             // answer phrase length
-            if (Question.getFeatureNames().contains("lengthAnswerPhrase"))
+            if (Question.getFeatureNames().contains("lengthAnswerPhrase")) {
                 extractCountAndGreaterThanFeatures(q, "lengthAnswerPhrase", 4, 10, answerPhraseTree.yield().size());
+            }
         }
     }
 
-    private void extractGrammarCategoryFeatures(Question q) {
-        Tree tree = q.getTree();
+    private void extractGrammarCategoryFeatures(final Question q) {
+        final Tree tree = q.getTree();
         // Tree sourceTree = q.getSourceTree();
-        Tree answerPhraseTree = q.getAnswerPhraseTree();
+        final Tree answerPhraseTree = q.getAnswerPhraseTree();
 
         // number unique noun phrases in the question
-        if (Question.getFeatureNames().contains("numNPsQuestion"))
+        if (Question.getFeatureNames().contains("numNPsQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numNPsQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("NP !> NP", tree));
+        }
         // proper nouns
-        if (Question.getFeatureNames().contains("numProperNounsQuestion"))
+        if (Question.getFeatureNames().contains("numProperNounsQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numProperNounsQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^NNP/", tree));
+        }
         // quantities
-        if (Question.getFeatureNames().contains("numQuantitiesQuestion"))
+        if (Question.getFeatureNames().contains("numQuantitiesQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numQuantitiesQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("CD|QP", tree));
+        }
         // adjectives
-        if (Question.getFeatureNames().contains("numAdjectivesQuestion"))
+        if (Question.getFeatureNames().contains("numAdjectivesQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numAdjectivesQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^JJ/", tree));
+        }
         // adverbs
-        if (Question.getFeatureNames().contains("numAdverbsQuestion"))
+        if (Question.getFeatureNames().contains("numAdverbsQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numAdverbsQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^RB/", tree));
+        }
         // prepositional phrases
-        if (Question.getFeatureNames().contains("numPPsQuestion"))
+        if (Question.getFeatureNames().contains("numPPsQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numPPsQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("PP", tree));
+        }
         // num subordinate clauses
-        if (Question.getFeatureNames().contains("numSubordinateClausesQuestion"))
+        if (Question.getFeatureNames().contains("numSubordinateClausesQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numSubordinateClausesQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("SBAR", tree));
+        }
         // conjunctions
-        if (Question.getFeatureNames().contains("numConjunctionsQuestion"))
+        if (Question.getFeatureNames().contains("numConjunctionsQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numConjunctionsQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("CC", tree));
+        }
         // pronouns
-        if (Question.getFeatureNames().contains("numPronounsQuestion"))
+        if (Question.getFeatureNames().contains("numPronounsQuestion")) {
             extractCountAndGreaterThanFeatures(q, "numPronounsQuestion", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^PRP/", tree));
+        }
 
         if (answerPhraseTree != null) {
             // counts of different parts of speech, etc. in the answer phrase:
             // noun phrases
-            if (Question.getFeatureNames().contains("numNPsAnswer"))
+            if (Question.getFeatureNames().contains("numNPsAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numNPsAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("NP !> NP", answerPhraseTree));
+            }
             // proper nouns
-            if (Question.getFeatureNames().contains("numProperNounsAnswer"))
+            if (Question.getFeatureNames().contains("numProperNounsAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numProperNounsAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^NNP/", answerPhraseTree));
+            }
             // quantities
-            if (Question.getFeatureNames().contains("numQuantitiesAnswer"))
+            if (Question.getFeatureNames().contains("numQuantitiesAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numQuantitiesAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("CD|QP", answerPhraseTree));
+            }
             // adjectives
-            if (Question.getFeatureNames().contains("numAdjectivesAnswer"))
+            if (Question.getFeatureNames().contains("numAdjectivesAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numAdjectivesAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^JJ/", answerPhraseTree));
+            }
             // adverbs
-            if (Question.getFeatureNames().contains("numAdverbsAnswer"))
+            if (Question.getFeatureNames().contains("numAdverbsAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numAdverbsAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^RB/", answerPhraseTree));
+            }
             // prepositional phrases
-            if (Question.getFeatureNames().contains("numPPsAnswer"))
+            if (Question.getFeatureNames().contains("numPPsAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numPPsAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("PP", answerPhraseTree));
+            }
             // num subordinate clauses
-            if (Question.getFeatureNames().contains("numSubordinateClausesAnswer"))
+            if (Question.getFeatureNames().contains("numSubordinateClausesAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numSubordinateClausesAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("SBAR", answerPhraseTree));
+            }
             // conjunctions
-            if (Question.getFeatureNames().contains("numConjunctionsAnswer"))
+            if (Question.getFeatureNames().contains("numConjunctionsAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numConjunctionsAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("CC", answerPhraseTree));
+            }
             // pronouns
-            if (Question.getFeatureNames().contains("numPronounsAnswer"))
+            if (Question.getFeatureNames().contains("numPronounsAnswer")) {
                 extractCountAndGreaterThanFeatures(q, "numPronounsAnswer", 1, 5, AnalysisUtilities.getNumberOfMatchesInTree("/^PRP/", answerPhraseTree));
+            }
         }
     }
 
-    private void extractLangModelFeatures(Question q) {
-        Tree tree = q.getTree();
-        Tree sourceTree = q.getSourceTree();
-        Tree answerPhraseTree = q.getAnswerPhraseTree();
+    private void extractLangModelFeatures(final Question q) {
+        final Tree tree = q.getTree();
+        final Tree sourceTree = q.getSourceTree();
+        final Tree answerPhraseTree = q.getAnswerPhraseTree();
 
-        List<String> sourceTokens = extractTokensFromTree(sourceTree);
-        List<String> questionTokens = extractTokensFromTree(tree);
+        final List<String> sourceTokens = extractTokensFromTree(sourceTree);
+        final List<String> questionTokens = extractTokensFromTree(tree);
 
-        double trigramSource = getForwardLM().logBase10ProbabilityOfSentence(sourceTokens);
-        double trigramQuestion = getForwardLM().logBase10ProbabilityOfSentence(questionTokens);
-        double meanUnigramSource = getForwardLM().meanUnigramLogBase10Probability(sourceTokens);
-        double meanUnigramQuestion = getForwardLM().meanUnigramLogBase10Probability(questionTokens);
+        final double trigramSource = getForwardLM().logBase10ProbabilityOfSentence(sourceTokens);
+        final double trigramQuestion = getForwardLM().logBase10ProbabilityOfSentence(questionTokens);
+        final double meanUnigramSource = getForwardLM().meanUnigramLogBase10Probability(sourceTokens);
+        final double meanUnigramQuestion = getForwardLM().meanUnigramLogBase10Probability(questionTokens);
 
-        if (Question.getFeatureNames().contains("normalizedTrigramLMSource"))
+        if (Question.getFeatureNames().contains("normalizedTrigramLMSource")) {
             q.setFeatureValue("normalizedTrigramLMSource", trigramSource / sourceTokens.size());
-        if (Question.getFeatureNames().contains("normalizedTrigramLMQuestion"))
+        }
+        if (Question.getFeatureNames().contains("normalizedTrigramLMQuestion")) {
             q.setFeatureValue("normalizedTrigramLMQuestion", trigramQuestion / questionTokens.size());
+        }
         // mean unigram frequency of words in source sentence
-        if (Question.getFeatureNames().contains("normalizedUnigramLMSource"))
+        if (Question.getFeatureNames().contains("normalizedUnigramLMSource")) {
             q.setFeatureValue("normalizedUnigramLMSource", meanUnigramSource);
+        }
         // mean unigram frequency of words in question
-        if (Question.getFeatureNames().contains("normalizedUnigramLMQuestion"))
+        if (Question.getFeatureNames().contains("normalizedUnigramLMQuestion")) {
             q.setFeatureValue("normalizedUnigramLMQuestion", meanUnigramQuestion);
+        }
 
-        if (Question.getFeatureNames().contains("trigramLMSource"))
+        if (Question.getFeatureNames().contains("trigramLMSource")) {
             q.setFeatureValue("trigramLMSource", trigramSource);
-        if (Question.getFeatureNames().contains("trigramLMQuestion"))
+        }
+        if (Question.getFeatureNames().contains("trigramLMQuestion")) {
             q.setFeatureValue("trigramLMQuestion", trigramQuestion);
+        }
         // mean unigram frequency of words in source sentence
-        if (Question.getFeatureNames().contains("unigramLMSource"))
+        if (Question.getFeatureNames().contains("unigramLMSource")) {
             q.setFeatureValue("unigramLMSource", meanUnigramSource * sourceTokens.size());
+        }
         // mean unigram frequency of words in question
-        if (Question.getFeatureNames().contains("unigramLMQuestion"))
+        if (Question.getFeatureNames().contains("unigramLMQuestion")) {
             q.setFeatureValue("unigramLMQuestion", meanUnigramQuestion * questionTokens.size());
+        }
 
         if (answerPhraseTree != null) {
-            List<String> answerTokens = extractTokensFromTree(answerPhraseTree);// .yield().toString().split("\\s+");
+            final List<String> answerTokens = extractTokensFromTree(answerPhraseTree);// .yield().toString().split("\\s+");
 
-            double trigramAnswer = getForwardLM().logBase10ProbabilityOfSentence(answerTokens);
-            double meanUnigramAnswer = getForwardLM().meanUnigramLogBase10Probability(answerTokens);
+            final double trigramAnswer = getForwardLM().logBase10ProbabilityOfSentence(answerTokens);
+            final double meanUnigramAnswer = getForwardLM().meanUnigramLogBase10Probability(answerTokens);
 
-            if (Question.getFeatureNames().contains("normalizedTrigramLMAnswer"))
+            if (Question.getFeatureNames().contains("normalizedTrigramLMAnswer")) {
                 q.setFeatureValue("normalizedTrigramLMAnswer", trigramAnswer / answerTokens.size());
-            if (Question.getFeatureNames().contains("normalizedUnigramLMAnswer"))
+            }
+            if (Question.getFeatureNames().contains("normalizedUnigramLMAnswer")) {
                 q.setFeatureValue("normalizedUnigramLMAnswer", meanUnigramAnswer);
-            if (Question.getFeatureNames().contains("trigramLMAnswer"))
+            }
+            if (Question.getFeatureNames().contains("trigramLMAnswer")) {
                 q.setFeatureValue("trigramLMAnswer", trigramAnswer);
-            if (Question.getFeatureNames().contains("unigramLMAnswer"))
+            }
+            if (Question.getFeatureNames().contains("unigramLMAnswer")) {
                 q.setFeatureValue("unigramLMAnswer", meanUnigramAnswer * answerTokens.size());
+            }
         }
     }
 
-    private List<String> extractTokensFromTree(Tree tree) {
-        List<String> res = new ArrayList<String>();
-        List<Tree> leaves = tree.getLeaves();
+    private List<String> extractTokensFromTree(final Tree tree) {
+        final List<String> res = new ArrayList<String>();
+        final List<Tree> leaves = tree.getLeaves();
 
-        for (Tree leaf : leaves) {
+        for (final Tree leaf : leaves) {
             res.add(leaf.yield().toString());
         }
 
         return res;
     }
 
-    public List<String> extractTokensBeforeAnswer(List<String> intermediateToks, List<String> answerToks) {
-        List<String> res = new ArrayList<String>();
+    public List<String> extractTokensBeforeAnswer(final List<String> intermediateToks, final List<String> answerToks) {
+        final List<String> res = new ArrayList<String>();
 
         int start = -1;
         for (int i = 0; i < intermediateToks.size() && start == -1; i++) {
@@ -358,8 +392,9 @@ public class QuestionFeatureExtractor {
             }
         }
 
-        if (start == -1)
+        if (start == -1) {
             return res;
+        }
 
         for (int k = 0; k < start; k++) {
             res.add(intermediateToks.get(k));
@@ -377,7 +412,7 @@ public class QuestionFeatureExtractor {
      * @param increment
      * @param numThresholds
      */
-    public static void extractCountAndGreaterThanFeatures(Question q, String featurePrefix, double increment, double numThresholds, double featureValue) {
+    public static void extractCountAndGreaterThanFeatures(final Question q, final String featurePrefix, final double increment, final double numThresholds, final double featureValue) {
         q.setFeatureValue(featurePrefix, featureValue);
         for (int i = 0; i < numThresholds * increment; i += increment) {
             if (featureValue > i) {

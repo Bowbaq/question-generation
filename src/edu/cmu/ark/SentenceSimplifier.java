@@ -23,8 +23,15 @@
 
 package edu.cmu.ark;
 
-import java.util.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import edu.stanford.nlp.trees.LabeledScoredTreeFactory;
 import edu.stanford.nlp.trees.Tree;
@@ -54,11 +61,12 @@ public class SentenceSimplifier {
         factory = new LabeledScoredTreeFactory();
     }
 
-    public List<Question> simplifyHelper(Question input) {
-        if (GlobalProperties.getDebug())
+    public List<Question> simplifyHelper(final Question input) {
+        if (GlobalProperties.getDebug()) {
             System.err.println("simplifyHelper: " + input.getIntermediateTree());
+        }
         numSimplifyHelperCalls++;
-        List<Question> treeCollection = new ArrayList<Question>();
+        final List<Question> treeCollection = new ArrayList<Question>();
 
         // move fronted PPs to the end of the sentence
         // if modified, add new tree to results and make a new copy
@@ -76,13 +84,14 @@ public class SentenceSimplifier {
             addIfNovel(treeCollection, input);
         } else {
 
-            List<Question> extracted = new ArrayList<Question>();
+            final List<Question> extracted = new ArrayList<Question>();
             // if there is a conjunction of NPs within this small chunk, also extract separate sentences using each conjunct NP.
-            if (breakNPs)
+            if (breakNPs) {
                 extractConjoinedNPs(extracted, input);
+            }
             extractConjoinedPhrases(extracted, input);
 
-            for (Question e : extracted) {
+            for (final Question e : extracted) {
                 // recur
                 addAllIfNovel(treeCollection, simplifyHelper(e));
             }
@@ -98,7 +107,7 @@ public class SentenceSimplifier {
      * from phrases with "according" and "including",
      * which syntactically look like participial phrases.
      */
-    private boolean mainVerbOK(Question input) {
+    private boolean mainVerbOK(final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -107,12 +116,12 @@ public class SentenceSimplifier {
         tregexOpStr = "ROOT <+(VP|S) (/VB.*/ < /(accord.*|includ.*)/)";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
-        boolean res = !matcher.find();
+        final boolean res = !matcher.find();
 
         return res;
     }
 
-    private boolean hasBreakableConjunction(Question input) {
+    private boolean hasBreakableConjunction(final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -158,7 +167,7 @@ public class SentenceSimplifier {
      * @param input
      * @return
      */
-    private boolean hasSubjectAndFiniteMainVerb(Question input) {
+    private boolean hasSubjectAndFiniteMainVerb(final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -171,11 +180,11 @@ public class SentenceSimplifier {
 
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
-        boolean res = matcher.find();
+        final boolean res = matcher.find();
         return res;
     }
 
-    private void removeNestedElements(Question input) {
+    private void removeNestedElements(final Question input) {
         removeAppositives(input);
         removeVerbalModifiersAfterCommas(input);
         removeClauseLevelModifiers(input);
@@ -183,10 +192,12 @@ public class SentenceSimplifier {
         removeParentheticals(input);
 
         if (GlobalProperties.getComputeFeatures())
+        {
             input.setFeatureValue("removedNestedElements", 1.0); // old feature name
+        }
     }
 
-    public List<Question> simplify(Tree sentence) {
+    public List<Question> simplify(final Tree sentence) {
         return simplify(sentence, true);
     }
 
@@ -200,13 +211,14 @@ public class SentenceSimplifier {
      * @param fixCapitalization
      * @return
      */
-    public List<Question> simplify(Tree sentence, boolean fixCapitalization) {
-        List<Question> treeList = new ArrayList<Question>();
+    public List<Question> simplify(final Tree sentence, final boolean fixCapitalization) {
+        final List<Question> treeList = new ArrayList<Question>();
         numSimplifyHelperCalls = 0;
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("simplify input:" + sentence);
+        }
         // add original tree
-        Question orig = new Question();
+        final Question orig = new Question();
         orig.setSourceTree(sentence);
         orig.setIntermediateTree(sentence.deeperCopy());
 
@@ -219,9 +231,9 @@ public class SentenceSimplifier {
 
         AnalysisUtilities.downcaseFirstToken(orig.getIntermediateTree());
         // treeSet.add(originalWithFeatures);
-        Question current = orig.deeperCopy();
+        final Question current = orig.deeperCopy();
 
-        List<Question> extracted = new ArrayList<Question>();
+        final List<Question> extracted = new ArrayList<Question>();
 
         // for each nested element in the INPUT... (nested elements include finite verbs, non-restrictive relative clauses, appositives, conjunction
         // of VPs, conjunction of clauses, participial phrases)
@@ -233,10 +245,11 @@ public class SentenceSimplifier {
         extractAppositives(extracted, orig);
         extractVerbParticipialModifiers(extracted, orig);
         // extractWITHPartcipialPhrases(extracted, orig); //too rare to worry about
-        if (extractFromVerbComplements)
+        if (extractFromVerbComplements) {
             extractComplementClauses(extracted, orig);
+        }
 
-        for (Question q : extracted) {
+        for (final Question q : extracted) {
             addAllIfNovel(treeList, simplifyHelper(q));
         }
 
@@ -247,41 +260,45 @@ public class SentenceSimplifier {
 
         if (fixCapitalization) {
             // upcase the first tokens of all output trees.
-            for (Question q : treeList) {
+            for (final Question q : treeList) {
                 AnalysisUtilities.upcaseFirstToken(q.getIntermediateTree());
             }
         }
 
         // clean up the output
-        for (Question q : treeList) {
+        for (final Question q : treeList) {
             AnalysisUtilities.removeExtraQuotes(q.getIntermediateTree());
         }
 
         if (GlobalProperties.getComputeFeatures()) {
-            Question t = treeList.get(0);
+            final Question t = treeList.get(0);
             boolean fromMainClause = true;
-            String[] nestedExtractionFeatureNames = { "extractedFromParticipial", "extractedFromVerbParticipial",
+            final String[] nestedExtractionFeatureNames = { "extractedFromParticipial", "extractedFromVerbParticipial",
                     "extractedFromFiniteClause", "extractedFromSubordinateClause", "extractedFromComplementClause",
                     "extractedFromAppositive", "extractedFromRelativeClause",
                     "extractedFromParticipial", "extractedFromNounParticipial" };
-            for (String name : nestedExtractionFeatureNames) {
+            for (final String name : nestedExtractionFeatureNames) {
                 if (t.getFeatureValue(name) != 0) {
                     fromMainClause = false;
                     break;
                 }
             }
             if (fromMainClause)
+            {
                 t.setFeatureValue("extractedFromLeftMostMainClause", 1.0);
-            // t.setFeatureValue("extractedFromLeftMostMainClause", 1.0);
+                // t.setFeatureValue("extractedFromLeftMostMainClause", 1.0);
+            }
         }
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("simplifyHelperCalls:\t" + numSimplifyHelperCalls);
+        }
 
         if (mainClauseOnly) {
-            Question tmp = treeList.get(0);
+            final Question tmp = treeList.get(0);
             treeList.clear();
-            if (tmp.getFeatureValue("extractedFromLeftMostMainClause") == 1.0)
+            if (tmp.getFeatureValue("extractedFromLeftMostMainClause") == 1.0) {
                 treeList.add(tmp);
+            }
         }
 
         return treeList;
@@ -292,10 +309,11 @@ public class SentenceSimplifier {
      * We check for various rare nonterminal labels
      * to skip over parses that are likely to be bad.
      */
-    private boolean uglyParse(Tree t) {
+    private boolean uglyParse(final Tree t) {
         if (TregexPatternFactory.getPattern("UCP|FRAG|X|NAC").matcher(t).find()) {
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("Ugly parse");
+            }
         }
         return false;
     }
@@ -307,9 +325,9 @@ public class SentenceSimplifier {
      * @param treeSet
      * @param q
      */
-    private void addIfNovel(Collection<Question> treeSet, Question q) {
+    private void addIfNovel(final Collection<Question> treeSet, final Question q) {
         boolean exists = false;
-        for (Question old : treeSet) {
+        for (final Question old : treeSet) {
             if (old.getIntermediateTree().equals(q.getIntermediateTree())) {
                 exists = true;
                 break;
@@ -328,16 +346,16 @@ public class SentenceSimplifier {
      * @param treeSet
      * @param extracted
      */
-    private void addAllIfNovel(Collection<Question> treeSet, Collection<Question> extracted) {
-        for (Question q : extracted) {
-            this.addIfNovel(treeSet, q);
+    private void addAllIfNovel(final Collection<Question> treeSet, final Collection<Question> extracted) {
+        for (final Question q : extracted) {
+            addIfNovel(treeSet, q);
         }
     }
 
     /**
      * e.g., John and James like Susan. -> John likes Susan.
      */
-    private void extractConjoinedNPs(Collection<Question> extracted, Question input) {
+    private void extractConjoinedNPs(final Collection<Question> extracted, final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         Tree conjoinedNode;
@@ -360,8 +378,8 @@ public class SentenceSimplifier {
         // "John and Mary are two of my best friends.")
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
-        List<Integer> nodeIndexes = new ArrayList<Integer>();
-        List<Integer> parentIDs = new ArrayList<Integer>();
+        final List<Integer> nodeIndexes = new ArrayList<Integer>();
+        final List<Integer> parentIDs = new ArrayList<Integer>();
 
         while (matcher.find()) {
             // store the parents' IDs (in the tree)
@@ -370,9 +388,10 @@ public class SentenceSimplifier {
 
             conjoinedNode = matcher.getNode("child");
             // store the conjoined nodes' index into their parent's list of children
-            int idx = parent.indexOf(conjoinedNode);
-            if (!nodeIndexes.contains(idx))
+            final int idx = parent.indexOf(conjoinedNode);
+            if (!nodeIndexes.contains(idx)) {
                 nodeIndexes.add(idx);
+            }
         }
 
         // for each of the conjoined children,
@@ -381,9 +400,9 @@ public class SentenceSimplifier {
         for (int i = 0; i < nodeIndexes.size(); i++) {
             newQuestion = input.deeperCopy();
 
-            Tree t = newQuestion.getIntermediateTree();
+            final Tree t = newQuestion.getIntermediateTree();
             parent = t.getNodeNumber(parentIDs.get(i));
-            Tree gparent = parent.parent(t);
+            final Tree gparent = parent.parent(t);
             conjoinedNode = parent.getChild(nodeIndexes.get(i));
             String siblingLabel;
 
@@ -391,8 +410,9 @@ public class SentenceSimplifier {
             // with the selected noun (or are conjunctions, commas).
             // These can have labels NP, NN, ..., PRP for pronouns, CC, "," for commas, ":" for semi-colons
             for (int j = 0; j < parent.numChildren(); j++) {
-                if (parent.getChild(j) == conjoinedNode)
+                if (parent.getChild(j) == conjoinedNode) {
                     continue;
+                }
                 siblingLabel = parent.getChild(j).label().toString();
                 if (siblingLabel.matches("^[NCP,:S].*")) {
                     parent.removeChild(j);
@@ -403,7 +423,7 @@ public class SentenceSimplifier {
             // if there is an trivial unary "NP -> NP",
             // remove the parent and put the child in its place
             if (parent.numChildren() == 1 && parent.getChild(0).label().equals("NP")) {
-                int tmpIndex = gparent.indexOf(parent);
+                final int tmpIndex = gparent.indexOf(parent);
                 gparent.removeChild(tmpIndex);
                 gparent.addChild(tmpIndex, parent.getChild(0));
             }
@@ -411,12 +431,16 @@ public class SentenceSimplifier {
             correctTense(conjoinedNode, gparent);
             addQuotationMarksIfNeeded(newQuestion.getIntermediateTree());
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("extractConjoinedNPs: " + newQuestion.getIntermediateTree().toString());
+            }
             if (GlobalProperties.getComputeFeatures())
+            {
                 newQuestion.setFeatureValue("extractedFromConjoinedPhrases", 1.0); // old feature name
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 newQuestion.setFeatureValue("extractedFromConjoinedNPs", 1.0);
+            }
             extracted.add(newQuestion);
         }
     }
@@ -426,22 +450,22 @@ public class SentenceSimplifier {
      * John and I like Bill -> John LIKES Bill. I LIKE Bill.
      * John and I are old. -> I IS old. John IS old.
      */
-    private void correctTense(Tree subject, Tree clause) {
+    private void correctTense(final Tree subject, final Tree clause) {
         int tmpIndex;
         // correct verb tense when modifying subjects
-        for (Tree uncle : clause.getChildrenAsList()) {
+        for (final Tree uncle : clause.getChildrenAsList()) {
             String newVerbPOS = null;
             Tree verbPreterminal = null;
             boolean needToModifyVerb = false;
             // if the node is a subject (i.e., its uncle is a VP), then check
             // to see if its tense needs to be changed
-            String headPOS = subject.headPreTerminal(AnalysisUtilities.getInstance().getHeadFinder()).label().toString();
+            final String headPOS = subject.headPreTerminal(AnalysisUtilities.getHeadFinder()).label().toString();
             if (uncle.label().toString().equals("VP") && !headPOS.endsWith("S")) {
-                verbPreterminal = uncle.headPreTerminal(AnalysisUtilities.getInstance().getHeadFinder());
+                verbPreterminal = uncle.headPreTerminal(AnalysisUtilities.getHeadFinder());
                 // original main verb was plural but the conjoined subject word is singular
                 // e.g., John (and Mary) like Bill. -> John like Bill.
-                if ((verbPreterminal.label().toString().equals("VB") || verbPreterminal.label().toString().equals("VBP"))) { // the parser confuses
-                                                                                                                             // VBP with VB
+                if (verbPreterminal.label().toString().equals("VB") || verbPreterminal.label().toString().equals("VBP")) { // the parser confuses
+                                                                                                                           // VBP with VB
                     if (subject.yield().toString().equals("I") || subject.yield().toString().equals("you")) {
                         newVerbPOS = "VBP";
                     } else {
@@ -455,23 +479,24 @@ public class SentenceSimplifier {
             }
             // if needed, change the tense of the verb
             if (needToModifyVerb) {
-                String verbLemma = AnalysisUtilities.getInstance().getLemma(verbPreterminal.getChild(0).label().toString(), verbPreterminal.label().toString());
+                final String verbLemma = AnalysisUtilities.getLemma(verbPreterminal.getChild(0).label().toString(), verbPreterminal.label().toString());
                 String newVerb;
                 // special cases
                 if (verbLemma.equals("be") && newVerbPOS.equals("VBD")) {
-                    if (subject.label().toString().endsWith("S"))
+                    if (subject.label().toString().endsWith("S")) {
                         newVerb = "were";
-                    else
+                    } else {
                         newVerb = "was";
+                    }
                 } else if (verbLemma.equals("be") && subject.yield().toString().equals("I") && newVerbPOS.equals("VBP")) {
                     newVerb = "am";
                 } else { // default
-                    newVerb = AnalysisUtilities.getInstance().getSurfaceForm(verbLemma, newVerbPOS);
+                    newVerb = AnalysisUtilities.getSurfaceForm(verbLemma, newVerbPOS);
                 }
                 tmpIndex = verbPreterminal.parent(uncle).indexOf(verbPreterminal);
-                Tree verbParent = verbPreterminal.parent(uncle);
+                final Tree verbParent = verbPreterminal.parent(uncle);
                 verbParent.removeChild(tmpIndex);
-                verbParent.addChild(tmpIndex, AnalysisUtilities.getInstance().readTreeFromString("(" + newVerbPOS + " " + newVerb + ")"));
+                verbParent.addChild(tmpIndex, AnalysisUtilities.readTreeFromString("(" + newVerbPOS + " " + newVerb + ")"));
             }
         }
     }
@@ -479,7 +504,7 @@ public class SentenceSimplifier {
     /**
      * e.g., John ran and Bill walked. -> John ran. Bill walked.
      */
-    private void extractConjoinedPhrases(Collection<Question> extracted, Question input) {
+    private void extractConjoinedPhrases(final Collection<Question> extracted, final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         Tree conjoinedNode;
@@ -521,26 +546,31 @@ public class SentenceSimplifier {
             // make a new Question object and add it
             addQuotationMarksIfNeeded(newTree);
 
-            Question newTreeWithFeatures = input.deeperCopy();
+            final Question newTreeWithFeatures = input.deeperCopy();
             newTreeWithFeatures.setIntermediateTree(newTree);
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("extractConjoinedPhrases: " + newTree.toString());
+            }
             if (GlobalProperties.getComputeFeatures())
+            {
                 newTreeWithFeatures.setFeatureValue("extractedFromConjoinedPhrases", 1.0); // old feature name
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 newTreeWithFeatures.setFeatureValue("extractedFromConjoined", 1.0);
+            }
             addIfNovel(extracted, newTreeWithFeatures);
         }
     }
 
-    private void removeConjoinedSiblingsHelper(Tree copy, int childindex) {
-        if (GlobalProperties.getDebug())
+    private void removeConjoinedSiblingsHelper(final Tree copy, final int childindex) {
+        if (GlobalProperties.getDebug()) {
             System.err.println("removeConjoinedSiblingsHelper: " + copy.toString());
-        Tree child = copy.getNodeNumber(childindex);
-        Tree parent = child.parent(copy);
-        Tree gparent = parent.parent(copy);
+        }
+        final Tree child = copy.getNodeNumber(childindex);
+        final Tree parent = child.parent(copy);
+        final Tree gparent = parent.parent(copy);
 
-        int parentIdx = gparent.indexOf(parent);
+        final int parentIdx = gparent.indexOf(parent);
 
         // By an annoying PTB convention, some verb phrase conjunctions
         // can conjoin two verb preterminals under a VP,
@@ -549,7 +579,7 @@ public class SentenceSimplifier {
         // So, we add an extra VP node in between if necessary
         if (child.label().toString().startsWith("VB")) {
             gparent.removeChild(parentIdx);
-            Tree newTree = factory.newTreeNode("VP", new ArrayList<Tree>());
+            final Tree newTree = factory.newTreeNode("VP", new ArrayList<Tree>());
             newTree.addChild(child);
             gparent.addChild(parentIdx, newTree);
         } else {
@@ -563,7 +593,7 @@ public class SentenceSimplifier {
      * @param q
      * @return
      */
-    private boolean removeClauseLevelModifiers(Question q) {
+    private boolean removeClauseLevelModifiers(final Question q) {
         List<Pair<TregexPattern, TsurgeonPattern>> ops;
         String tregexOpStr;
         TregexPattern matchPattern;
@@ -576,7 +606,7 @@ public class SentenceSimplifier {
         // leave conditional antecedents (i.e., with "if" or "unless" as complementizers. punt on "even if")
         tregexOpStr = "ROOT=root < (S=mainclause < (/SBAR|ADVP|ADJP|CC|PP|S|NP/=fronted !< (IN < if|unless) !$ ``  $++ NP=subject))";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        TregexMatcher matcher = matchPattern.matcher(q.getIntermediateTree());
+        final TregexMatcher matcher = matchPattern.matcher(q.getIntermediateTree());
         if (matcher.find()) {
             ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
             ps = new ArrayList<TsurgeonPattern>();
@@ -597,8 +627,9 @@ public class SentenceSimplifier {
             Tsurgeon.processPatternsOnTree(ops, q.getIntermediateTree());
 
             addQuotationMarksIfNeeded(q.getIntermediateTree());
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 q.setFeatureValue("removedClauseLevelModifiers", 1.0);
+            }
             modified = true;
         }
 
@@ -611,7 +642,7 @@ public class SentenceSimplifier {
      * @param input
      * @return whether or not a change was made
      */
-    private boolean removeVerbalModifiersAfterCommas(Question q) {
+    private boolean removeVerbalModifiersAfterCommas(final Question q) {
         List<Pair<TregexPattern, TsurgeonPattern>> ops;
         String tregexOpStr;
         TregexPattern matchPattern;
@@ -642,8 +673,9 @@ public class SentenceSimplifier {
             Tsurgeon.processPatternsOnTree(ops, q.getIntermediateTree());
             addQuotationMarksIfNeeded(q.getIntermediateTree());
 
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 q.setFeatureValue("removedVerbalModifiersAfterCommas", 1.0);
+            }
             return true;
         } else {
             return false;
@@ -656,7 +688,7 @@ public class SentenceSimplifier {
      * @param extracted
      * @param input
      */
-    private void extractVerbParticipialModifiers(Collection<Question> extracted, Question input) {
+    private void extractVerbParticipialModifiers(final Collection<Question> extracted, final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -669,32 +701,35 @@ public class SentenceSimplifier {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
         while (matcher.find()) {
-            String verbPOS = findTense(matcher.getNode("tense"));
-            Tree p = matcher.getNode("participial").deeperCopy();
-            Tree verb = matcher.getNode("verb");
-            String verbLemma = AnalysisUtilities.getInstance().getLemma(verb.getChild(0).label().toString(), verb.label().toString());
-            String newVerb = AnalysisUtilities.getInstance().getSurfaceForm(verbLemma, verbPOS);
-            int verbIndex = p.indexOf(verb);
+            final String verbPOS = findTense(matcher.getNode("tense"));
+            final Tree p = matcher.getNode("participial").deeperCopy();
+            final Tree verb = matcher.getNode("verb");
+            final String verbLemma = AnalysisUtilities.getLemma(verb.getChild(0).label().toString(), verb.label().toString());
+            final String newVerb = AnalysisUtilities.getSurfaceForm(verbLemma, verbPOS);
+            final int verbIndex = p.indexOf(verb);
             p.removeChild(verbIndex);
-            p.addChild(verbIndex, AnalysisUtilities.getInstance().readTreeFromString("(" + verbPOS + " " + newVerb + ")"));
-            String treeStr = "(ROOT (S " + matcher.getNode("subj").toString() + " " + p.toString() + " (. .)))";
-            Tree newTree = AnalysisUtilities.getInstance().readTreeFromString(treeStr);
+            p.addChild(verbIndex, AnalysisUtilities.readTreeFromString("(" + verbPOS + " " + newVerb + ")"));
+            final String treeStr = "(ROOT (S " + matcher.getNode("subj").toString() + " " + p.toString() + " (. .)))";
+            final Tree newTree = AnalysisUtilities.readTreeFromString(treeStr);
             correctTense(newTree.getChild(0).getChild(0), newTree.getChild(0));
 
             addQuotationMarksIfNeeded(newTree);
-            Question newTreeWithFeatures = input.deeperCopy();
+            final Question newTreeWithFeatures = input.deeperCopy();
             newTreeWithFeatures.setIntermediateTree(newTree);
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 newTreeWithFeatures.setFeatureValue("extractedFromParticipial", 1.0);
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 newTreeWithFeatures.setFeatureValue("extractedFromVerbParticipial", 1.0);
-            if (GlobalProperties.getDebug())
+            }
+            if (GlobalProperties.getDebug()) {
                 System.err.println("extractVerbParticipialModifiers: " + newTree.toString());
+            }
             addIfNovel(extracted, newTreeWithFeatures);
         }
     }
 
-    private String findTense(Tree node) {
+    private String findTense(final Tree node) {
         if (node.label().equals("MD")) {
             if (node.yield().toString().matches("^(would|could)$")) {
                 return "VBD";
@@ -706,7 +741,7 @@ public class SentenceSimplifier {
     /**
      * e.g., As John slept, I studied. -> John slept.
      */
-    private void extractSubordinateClauses(Collection<Question> extracted, Question input) {
+    private void extractSubordinateClauses(final Collection<Question> extracted, final Question input) {
         Tree subord;
         String tregexOpStr;
         TregexPattern matchPattern;
@@ -720,25 +755,29 @@ public class SentenceSimplifier {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
         while (matcher.find()) {
-            Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
+            final Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
             subord = matcher.getNode("sub");
             newTree.addChild(subord.deeperCopy());
 
             AnalysisUtilities.addPeriodIfNeeded(newTree);
             addQuotationMarksIfNeeded(newTree);
-            Question newTreeWithFeatures = input.deeperCopy();
+            final Question newTreeWithFeatures = input.deeperCopy();
             newTreeWithFeatures.setIntermediateTree(newTree);
             if (GlobalProperties.getComputeFeatures())
+            {
                 newTreeWithFeatures.setFeatureValue("extractedFromFiniteClause", 1.0); // old feature name
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 newTreeWithFeatures.setFeatureValue("extractedFromSubordinateClause", 1.0);
-            if (GlobalProperties.getDebug())
+            }
+            if (GlobalProperties.getDebug()) {
                 System.err.println("extractSubordinateClauses: " + newTree.toString());
+            }
             addIfNovel(extracted, newTreeWithFeatures);
         }
     }
 
-    private void extractComplementClauses(Collection<Question> extracted, Question input) {
+    private void extractComplementClauses(final Collection<Question> extracted, final Question input) {
         Tree subord;
         String tregexOpStr;
         TregexPattern matchPattern;
@@ -753,10 +792,10 @@ public class SentenceSimplifier {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
         while (matcher.find()) {
-            Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
+            final Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
             subord = matcher.getNode("sub");
-            Tree verb = matcher.getNode("verb");
-            String verbLemma = AnalysisUtilities.getInstance().getLemma(verb.yield().toString(), verb.label().toString());
+            final Tree verb = matcher.getNode("verb");
+            final String verbLemma = AnalysisUtilities.getLemma(verb.yield().toString(), verb.label().toString());
 
             if (!verbImpliesComplement(verbLemma)) {
                 continue;
@@ -765,14 +804,18 @@ public class SentenceSimplifier {
 
             AnalysisUtilities.addPeriodIfNeeded(newTree);
             addQuotationMarksIfNeeded(newTree);
-            Question newTreeWithFeatures = input.deeperCopy();
+            final Question newTreeWithFeatures = input.deeperCopy();
             newTreeWithFeatures.setIntermediateTree(newTree);
             if (GlobalProperties.getComputeFeatures())
+            {
                 newTreeWithFeatures.setFeatureValue("extractedFromFiniteClause", 1.0); // old feature name
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 newTreeWithFeatures.setFeatureValue("extractedFromComplementClause", 1.0);
-            if (GlobalProperties.getDebug())
+            }
+            if (GlobalProperties.getDebug()) {
                 System.err.println("extractComplementClauses: " + newTree.toString());
+            }
             addIfNovel(extracted, newTreeWithFeatures);
         }
     }
@@ -784,7 +827,7 @@ public class SentenceSimplifier {
      * @param verbLemma
      * @return
      */
-    private boolean verbImpliesComplement(String verbLemma) {
+    private boolean verbImpliesComplement(final String verbLemma) {
         if (verbsThatImplyComplements == null) {
             verbsThatImplyComplements = new HashSet<String>();
             verbsThatImplyComplements.add("know");
@@ -801,7 +844,7 @@ public class SentenceSimplifier {
      * e.g., Lincoln, the 16th president, was tall. -> Lincoln was the 16th president.
      * The meeting, in 1984, was important. -> The meeting was in 1984.
      */
-    private void extractAppositives(Collection<Question> extracted, Question input) {
+    private void extractAppositives(final Collection<Question> extracted, final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -811,9 +854,9 @@ public class SentenceSimplifier {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
         while (matcher.find()) {
-            Tree verbtree = matcher.getNode("mainverb");
-            Tree nountree = matcher.getNode("noun").deeperCopy();
-            Tree appositivetree = matcher.getNode("appositive");
+            final Tree verbtree = matcher.getNode("mainverb");
+            final Tree nountree = matcher.getNode("noun").deeperCopy();
+            final Tree appositivetree = matcher.getNode("appositive");
 
             makeDeterminerDefinite(nountree);
 
@@ -827,7 +870,7 @@ public class SentenceSimplifier {
              */
 
             // make a new tree for a copula sentence with the noun and appositive
-            String pos = verbtree.label().toString();
+            final String pos = verbtree.label().toString();
             String copula;
             if (pos.equals("VBD")) {
                 if (isPlural(nountree)) {
@@ -842,22 +885,24 @@ public class SentenceSimplifier {
                     copula = "(VBD is)";
                 }
             }
-            Tree newTree = AnalysisUtilities.getInstance().readTreeFromString("(ROOT (S " + nountree + " (VP " + copula + " " + appositivetree + ") (. .)))");
+            final Tree newTree = AnalysisUtilities.readTreeFromString("(ROOT (S " + nountree + " (VP " + copula + " " + appositivetree + ") (. .)))");
 
             addQuotationMarksIfNeeded(newTree);
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("extractAppositives: " + newTree.toString());
-            Question newTreeWithFeatures = input.deeperCopy();
+            }
+            final Question newTreeWithFeatures = input.deeperCopy();
             newTreeWithFeatures.setIntermediateTree(newTree);
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 newTreeWithFeatures.setFeatureValue("extractedFromAppositive", 1.0);
+            }
 
             addIfNovel(extracted, newTreeWithFeatures);
 
         }
     }
 
-    private void addQuotationMarksIfNeeded(Tree input) {
+    private void addQuotationMarksIfNeeded(final Tree input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -869,8 +914,8 @@ public class SentenceSimplifier {
 
         if (matcher.find()) {
             TsurgeonPattern p;
-            List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
-            List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+            final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+            final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
 
             ps.add(Tsurgeon.parseOperation("insert ('' '') >-1 parent"));
             p = Tsurgeon.collectOperations(ps);
@@ -882,7 +927,7 @@ public class SentenceSimplifier {
     /**
      * e.g., John, who is a friend of mine, likes Susan. -> John is a friend of mine.
      */
-    private void extractNonRestrictiveRelativeClauses(Collection<Question> extracted, Question input) {
+    private void extractNonRestrictiveRelativeClauses(final Collection<Question> extracted, final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -902,12 +947,13 @@ public class SentenceSimplifier {
         while (matcher.find()) {
             Tree missingArgumentTree = matcher.getNode("np");
             Tree relclause = matcher.getNode("relclause");
-            if (missingArgumentTree == null || relclause == null)
+            if (missingArgumentTree == null || relclause == null) {
                 continue;
+            }
             missingArgumentTree = missingArgumentTree.deeperCopy();
             relclause = relclause.deeperCopy();
             Tree possessive = matcher.getNode("possessive");
-            Tree sbar = matcher.getNode("sbar").deeperCopy();
+            final Tree sbar = matcher.getNode("sbar").deeperCopy();
 
             makeDeterminerDefinite(missingArgumentTree);
 
@@ -915,10 +961,11 @@ public class SentenceSimplifier {
                 possessive = possessive.deeperCopy();
                 possessive.removeChild(0);
                 String newTree = "(NP (NP " + missingArgumentTree.toString() + " (POS 's))";
-                for (int i = 0; i < possessive.numChildren(); i++)
+                for (int i = 0; i < possessive.numChildren(); i++) {
                     newTree += possessive.getChild(i).toString() + " ";
+                }
                 newTree += ")";
-                missingArgumentTree = AnalysisUtilities.getInstance().readTreeFromString(newTree);
+                missingArgumentTree = AnalysisUtilities.readTreeFromString(newTree);
             }
 
             // remove the relative clause and the commas surrounding it from the missing argument tree
@@ -962,42 +1009,45 @@ public class SentenceSimplifier {
             matcherclause = matchPattern.matcher(relclause);
 
             if (matcherclause.find()) {
-                Tree newparenttree = matcherclause.getNode("newparent");
-                Tree verbtree = matcherclause.getNode("verb");
+                final Tree newparenttree = matcherclause.getNode("newparent");
+                final Tree verbtree = matcherclause.getNode("verb");
                 boolean ppRelativeClause = false;
 
                 if (matcher.getNode("wherecomp") != null) {
-                    String tmp = "(PP (IN at) " + missingArgumentTree.toString() + ")";
-                    missingArgumentTree = AnalysisUtilities.getInstance().readTreeFromString(tmp);
+                    final String tmp = "(PP (IN at) " + missingArgumentTree.toString() + ")";
+                    missingArgumentTree = AnalysisUtilities.readTreeFromString(tmp);
                     ppRelativeClause = true;
                     subjectMovement = false;
                 } else if (matcher.getNode("preposition") != null) {
-                    String tmp = "(PP (IN " + matcher.getNode("preposition").yield().toString() + ") " + missingArgumentTree.toString() + ")";
-                    missingArgumentTree = AnalysisUtilities.getInstance().readTreeFromString(tmp);
+                    final String tmp = "(PP (IN " + matcher.getNode("preposition").yield().toString() + ") " + missingArgumentTree.toString() + ")";
+                    missingArgumentTree = AnalysisUtilities.readTreeFromString(tmp);
                     ppRelativeClause = true;
                 }
 
                 if (subjectMovement) { // subject
                     newparenttree.addChild(newparenttree.indexOf(verbtree), missingArgumentTree);
                 } else { // newparentlabel is VP
-                    if (ppRelativeClause)
+                    if (ppRelativeClause) {
                         newparenttree.addChild(newparenttree.numChildren(), missingArgumentTree);
-                    else
+                    } else {
                         newparenttree.addChild(newparenttree.indexOf(verbtree) + 1, missingArgumentTree);
+                    }
                 }
 
                 // create a new tree with punctuation
-                Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
+                final Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
                 newTree.addChild(relclause);
                 AnalysisUtilities.addPeriodIfNeeded(newTree);
 
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println("extractRelativeClauses: " + newTree.toString());
+                }
                 addQuotationMarksIfNeeded(newTree);
-                Question newTreeWithFeatures = input.deeperCopy();
+                final Question newTreeWithFeatures = input.deeperCopy();
                 newTreeWithFeatures.setIntermediateTree(newTree);
-                if (GlobalProperties.getComputeFeatures())
+                if (GlobalProperties.getComputeFeatures()) {
                     newTreeWithFeatures.setFeatureValue("extractedFromRelativeClause", 1.0);
+                }
                 addIfNovel(extracted, newTreeWithFeatures);
             }
         }
@@ -1009,7 +1059,7 @@ public class SentenceSimplifier {
      * @param input
      * @return
      */
-    private void moveLeadingPPsAndQuotes(Question input) {
+    private void moveLeadingPPsAndQuotes(final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -1024,48 +1074,52 @@ public class SentenceSimplifier {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
 
-        List<Tree> modifiers = new ArrayList<Tree>();
+        final List<Tree> modifiers = new ArrayList<Tree>();
         while (matcher.find()) {
             if (mainvp == null) {
                 mainvp = matcher.getNode("mainvp").deeperCopy();
                 subj = matcher.getNode("subj").deeperCopy();
             }
-            Tree mainclause = matcher.getNode("mainclause");
-            Tree modifier = matcher.getNode("modifier").deeperCopy();
-            int idx = mainclause.indexOf(modifier);
+            final Tree mainclause = matcher.getNode("mainclause");
+            final Tree modifier = matcher.getNode("modifier").deeperCopy();
+            final int idx = mainclause.indexOf(modifier);
             if (modifiers.contains(modifier))
+            {
                 continue; // just in case the tregex expression catches duplicates
+            }
             // add commas and quotation marks if they appeared in the original
             if (idx > 0 && mainclause.getChild(idx - 1).label().toString().equals("``")) {
-                modifiers.add(AnalysisUtilities.getInstance().readTreeFromString("(, ,)"));
-                modifiers.add(AnalysisUtilities.getInstance().readTreeFromString("(`` ``)"));
-                Tree sbar = factory.newTreeNode("SBAR", new ArrayList<Tree>());
+                modifiers.add(AnalysisUtilities.readTreeFromString("(, ,)"));
+                modifiers.add(AnalysisUtilities.readTreeFromString("(`` ``)"));
+                final Tree sbar = factory.newTreeNode("SBAR", new ArrayList<Tree>());
                 sbar.addChild(modifier);
                 modifiers.add(sbar);
-                modifiers.add(AnalysisUtilities.getInstance().readTreeFromString("('' '')"));
+                modifiers.add(AnalysisUtilities.readTreeFromString("('' '')"));
             } else {
                 modifiers.add(modifier);
             }
         }
 
         if (mainvp != null) { // any matches?
-            for (Tree m : modifiers) {
+            for (final Tree m : modifiers) {
                 mainvp.addChild(m);
             }
 
-            Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
-            Tree clause = factory.newTreeNode("S", new ArrayList<Tree>());
+            final Tree newTree = factory.newTreeNode("ROOT", new ArrayList<Tree>());
+            final Tree clause = factory.newTreeNode("S", new ArrayList<Tree>());
             newTree.addChild(clause);
             clause.addChild(subj);
             clause.addChild(mainvp);
 
             AnalysisUtilities.addPeriodIfNeeded(newTree);
             addQuotationMarksIfNeeded(newTree);
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("moveLeadingModifiers: " + newTree.toString());
+            }
             input.setIntermediateTree(newTree);
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 input.setFeatureValue("movedLeadingPPs", 1.0);
+            }
         }
 
     }
@@ -1080,7 +1134,7 @@ public class SentenceSimplifier {
      * @param extracted
      * @param input
      */
-    private void extractNounParticipialModifiers(Collection<Question> extracted, Question input) {
+    private void extractNounParticipialModifiers(final Collection<Question> extracted, final Question input) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -1097,27 +1151,29 @@ public class SentenceSimplifier {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(input.getIntermediateTree());
         while (matcher.find()) {
-            Tree nountree = matcher.getNode("subj").deeperCopy();
+            final Tree nountree = matcher.getNode("subj").deeperCopy();
             Tree vptree = matcher.getNode("modifier");
-            Tree verb = matcher.getNode("tense");
+            final Tree verb = matcher.getNode("tense");
             makeDeterminerDefinite(nountree);
 
-            if (vptree.label().toString().equals("PP"))
+            if (vptree.label().toString().equals("PP")) {
                 vptree.label().setValue("VP");
-            String verbPOS = findTense(matcher.getNode("maintense"));
-            if (vptree == null || nountree == null)
+            }
+            final String verbPOS = findTense(matcher.getNode("maintense"));
+            if (vptree == null || nountree == null) {
                 return;
+            }
 
             String newTreeStr;
             if (verb.label().toString().equals("VBG")) {
                 // for present partcipials, change the tense to the tense of the main verb
                 // e.g., walking to the store -> walked to the store
-                String verbLemma = AnalysisUtilities.getInstance().getLemma(verb.getChild(0).label().toString(), verb.label().toString());
-                String newVerb = AnalysisUtilities.getInstance().getSurfaceForm(verbLemma, verbPOS);
-                int verbIndex = vptree.indexOf(verb);
+                final String verbLemma = AnalysisUtilities.getLemma(verb.getChild(0).label().toString(), verb.label().toString());
+                final String newVerb = AnalysisUtilities.getSurfaceForm(verbLemma, verbPOS);
+                final int verbIndex = vptree.indexOf(verb);
                 vptree = vptree.deeperCopy();
                 vptree.removeChild(verbIndex);
-                vptree.addChild(verbIndex, AnalysisUtilities.getInstance().readTreeFromString("(" + verbPOS + " " + newVerb + ")"));
+                vptree.addChild(verbIndex, AnalysisUtilities.readTreeFromString("(" + verbPOS + " " + newVerb + ")"));
                 newTreeStr = "(ROOT (S " + matcher.getNode("subj").toString() + " " + vptree.toString() + " (. .)))";
             } else {
                 // for past participials, add a copula
@@ -1125,32 +1181,38 @@ public class SentenceSimplifier {
                 // (or for conjunctions, just add the copula---kind of a hack to make the moby dick sentence work out)
                 String auxiliary;
                 if (verbPOS.equals("VBP") || verbPOS.equals("VBD")) {
-                    if (isPlural(nountree))
+                    if (isPlural(nountree)) {
                         auxiliary = "(VBD were)";
-                    else
+                    } else {
                         auxiliary = "(VBD was)";
+                    }
                 } else {
-                    if (isPlural(nountree))
+                    if (isPlural(nountree)) {
                         auxiliary = "(VB are)";
-                    else
+                    } else {
                         auxiliary = "(VBZ is)";
+                    }
                 }
 
                 newTreeStr = "(ROOT (S " + nountree + " (VP " + auxiliary + " " + vptree + ") (. .)))";
             }
 
-            Tree newTree = AnalysisUtilities.getInstance().readTreeFromString(newTreeStr);
+            final Tree newTree = AnalysisUtilities.readTreeFromString(newTreeStr);
             correctTense(newTree.getChild(0).getChild(0), newTree.getChild(0));
             addQuotationMarksIfNeeded(newTree);
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("extractNounParticipialModifiers: " + newTree.toString());
-            Question newTreeWithFeatures = input.deeperCopy();
+            }
+            final Question newTreeWithFeatures = input.deeperCopy();
             newTreeWithFeatures.setIntermediateTree(newTree);
             if (GlobalProperties.getComputeFeatures())
+            {
                 newTreeWithFeatures.setFeatureValue("extractedFromParticipial", 1.0); // old feature name
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 newTreeWithFeatures.setFeatureValue("extractedFromNounParticipial", 1.0);
+            }
             extracted.add(newTreeWithFeatures);
         }
 
@@ -1165,13 +1227,13 @@ public class SentenceSimplifier {
      * 
      * @param np
      */
-    private void makeDeterminerDefinite(Tree np) {
-        String tregexOpStr = "NP !> __ <+(NP) (DT=det !< the)";
-        TregexPattern matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
+    private void makeDeterminerDefinite(final Tree np) {
+        final String tregexOpStr = "NP !> __ <+(NP) (DT=det !< the)";
+        final TregexPattern matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
 
         TsurgeonPattern p;
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
 
         ps.add(Tsurgeon.parseOperation("replace det (DT the)"));
         p = Tsurgeon.collectOperations(ps);
@@ -1179,16 +1241,16 @@ public class SentenceSimplifier {
         Tsurgeon.processPatternsOnTree(ops, np);
     }
 
-    protected boolean isPlural(Tree nountree) {
-        String headTerminalLabel = nountree.headPreTerminal(AnalysisUtilities.getInstance().getHeadFinder()).label().toString();
-        return (headTerminalLabel.equals("NNS") || headTerminalLabel.equals("NPS"));
+    protected boolean isPlural(final Tree nountree) {
+        final String headTerminalLabel = nountree.headPreTerminal(AnalysisUtilities.getHeadFinder()).label().toString();
+        return headTerminalLabel.equals("NNS") || headTerminalLabel.equals("NPS");
     }
 
     /**
      * e.g., John, who hoped to get a good grade, studied. -> John studied.
      */
-    private boolean removeNonRestrRelClausesAndParticipials(Question q) {
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+    private boolean removeNonRestrRelClausesAndParticipials(final Question q) {
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
         String tregexOpStr;
         TregexPattern matchPattern;
         TsurgeonPattern p;
@@ -1204,8 +1266,9 @@ public class SentenceSimplifier {
             p = Tsurgeon.collectOperations(ps);
             ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
             Tsurgeon.processPatternsOnTree(ops, q.getIntermediateTree());
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 q.setFeatureValue("removedNonRestrRelClausesAndParticipials", 1.0);
+            }
             modified = true;
         }
 
@@ -1219,8 +1282,9 @@ public class SentenceSimplifier {
             p = Tsurgeon.collectOperations(ps);
             ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
             Tsurgeon.processPatternsOnTree(ops, q.getIntermediateTree());
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 q.setFeatureValue("removedNonRestrRelClausesAndParticipials", 1.0);
+            }
             modified = true;
         }
 
@@ -1232,8 +1296,8 @@ public class SentenceSimplifier {
      * 
      * @return whether or not a change was made
      */
-    private boolean removeParentheticals(Question q) {
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+    private boolean removeParentheticals(final Question q) {
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
         String tregexOpStr;
         TregexPattern matchPattern;
         TsurgeonPattern p;
@@ -1253,10 +1317,12 @@ public class SentenceSimplifier {
             ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
             Tsurgeon.processPatternsOnTree(ops, q.getIntermediateTree());
 
-            if (res)
+            if (res) {
                 addQuotationMarksIfNeeded(q.getIntermediateTree());
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 q.setFeatureValue("removedParentheticals", 1.0);
+            }
             res = true;
         }
 
@@ -1268,8 +1334,9 @@ public class SentenceSimplifier {
             p = Tsurgeon.collectOperations(ps);
             ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
             Tsurgeon.processPatternsOnTree(ops, q.getIntermediateTree());
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 q.setFeatureValue("removedParentheticals", 1.0);
+            }
             res = true;
         }
 
@@ -1280,7 +1347,7 @@ public class SentenceSimplifier {
         return numSimplifyHelperCalls;
     }
 
-    public void setNumSimplifyHelperCalls(long numSimplifyHelperCalls) {
+    public void setNumSimplifyHelperCalls(final long numSimplifyHelperCalls) {
         this.numSimplifyHelperCalls = numSimplifyHelperCalls;
     }
 
@@ -1290,8 +1357,8 @@ public class SentenceSimplifier {
      * @param q
      * @return whether or not a change was made
      */
-    private boolean removeAppositives(Question q) {
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+    private boolean removeAppositives(final Question q) {
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
         String tregexOpStr;
         TregexPattern matchPattern;
         TsurgeonPattern p;
@@ -1310,15 +1377,16 @@ public class SentenceSimplifier {
             Tsurgeon.processPatternsOnTree(ops, q.getIntermediateTree());
             addQuotationMarksIfNeeded(q.getIntermediateTree());
 
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 q.setFeatureValue("removedAppositives", 1.0);
+            }
             return true;
         } else {
             return false;
         }
     }
 
-    public void setBreakNPs(boolean breakNPs) {
+    public void setBreakNPs(final boolean breakNPs) {
         this.breakNPs = breakNPs;
     }
 
@@ -1326,7 +1394,7 @@ public class SentenceSimplifier {
         return breakNPs;
     }
 
-    public void setExtractFromVerbComplements(boolean extractFromVerbComplements) {
+    public void setExtractFromVerbComplements(final boolean extractFromVerbComplements) {
         this.extractFromVerbComplements = extractFromVerbComplements;
     }
 
@@ -1334,7 +1402,7 @@ public class SentenceSimplifier {
         return extractFromVerbComplements;
     }
 
-    private static String simplificationFeatureString(Question q) {
+    private static String simplificationFeatureString(final Question q) {
         String res = "";
 
         res += q.getFeatureValue("extractedFromAppositive");
@@ -1360,8 +1428,8 @@ public class SentenceSimplifier {
     /**
      * @param args
      */
-    public static void main(String[] args) {
-        SentenceSimplifier ss = new SentenceSimplifier();
+    public static void main(final String[] args) {
+        final SentenceSimplifier ss = new SentenceSimplifier();
         boolean doMobyDickParse = false;
         boolean treeInput = false;
         boolean verbose = false;
@@ -1384,7 +1452,7 @@ public class SentenceSimplifier {
                 verbose = true;
                 GlobalProperties.setComputeFeatures(true);
             } else if (args[i].equals("--help") || args[i].equals("-help") || args[i].equals("-h")) {
-                String helpStr = "A program for extracting simplified factual statements" +
+                final String helpStr = "A program for extracting simplified factual statements" +
                         " from complex sentences.\n" +
                         "Written by Michael Heilman (mheilman@cmu.edu), March 2010.\n" +
                         "The program takes plain text on standard input and prints output" +
@@ -1401,10 +1469,10 @@ public class SentenceSimplifier {
         GlobalProperties.loadProperties(propertiesFile);
 
         if (doMobyDickParse) {
-            String parseStr = "(ROOT (S (SBAR (IN As) (S (NP (PRP they)) (VP (VBD narrated) (PP (TO to) (NP (DT each) (NN other))) (NP (NP (PRP$ their) (JJ unholy) (NNS adventures)) (, ,) (NP (NP (PRP$ their) (NNS tales)) (PP (IN of) (NP (NN terror))) (VP (VBN told) (PP (IN in) (NP (NNS words) (PP (IN of) (NP (NN mirth))))))))))) (: ;) (SBAR (IN as) (S (NP (PRP$ their) (JJ uncivilized) (NN laughter)) (VP (VBD forked) (ADVP (RB upwards)) (PP (IN out) (IN of) (NP (PRP them))) (, ,) (PP (IN like) (NP (NP (DT the) (NNS flames)) (PP (IN from) (NP (DT the) (NN furnace)))))))) (: ;) (SBAR (IN as) (S (ADVP (TO to) (CC and) (RB fro)) (, ,) (PP (IN in) (NP (PRP$ their) (NN front))) (, ,) (NP (DT the) (NNS harpooneers)) (VP (ADVP (RB wildly)) (VBD gesticulated) (PP (IN with) (NP (PRP$ their) (JJ huge) (NP (JJ pronged) (NNS forks)) (CC and) (NNS dippers)))))) (: ;) (SBAR (IN as) (S (S (NP (DT the) (NN wind)) (VP (VBD howled) (PRT (RP on)))) (, ,) (CC and) (S (NP (DT the) (NN sea)) (VP (VBD leaped))) (, ,) (CC and) (S (NP (DT the) (NN ship)) (VP (VP (VBD groaned) (CC and) (VBD dived)) (, ,) (CC and) (RB yet) (VP (VP (ADVP (RB steadfastly)) (VBD shot) (NP (PRP$ her) (JJ red) (NN hell)) (ADVP (RBR further) (CC and) (RBR further)) (PP (IN into) (NP (NP (DT the) (NN blackness)) (PP (IN of) (NP (NP (DT the) (NN sea)) (CC and) (NP (DT the) (NN night))))))) (, ,) (CC and) (VP (ADVP (RB scornfully)) (VBD champed) (NP (NP (DT the) (JJ white) (NN bone)) (PP (IN in) (PRP$ her) (NP (NN mouth))))) (, ,) (CC and) (VP (ADVP (RB viciously)) (VBD spat) (PP (IN round) (NP (PRP her))) (PP (IN on) (NP (DT all) (NNS sides))))))))) (: ;) (ADVP (RB then)) (NP (NP (DT the) (JJ rushing) (NNP Pequod)) (, ,) (VP (VP (VBN freighted) (PP (IN with) (NP (NN savages)))) (, ,) (CC and) (VP (VBN laden) (PP (IN with) (NP (NN fire)))) (, ,) (CC and) (VP (VBG burning) (NP (DT a) (NN corpse))) (, ,) (CC and) (VP (VBG plunging) (PP (IN into) (NP (NP (DT that) (NN blackness)) (PP (IN of) (NP (NN darkness))))))) (, ,)) (VP (VBD seemed) (NP (NP (DT the) (JJ material) (NN counterpart)) (PP (IN of) (NP (NP (PRP$ her) (JJ monomaniac) (NN commander) (POS 's)) (NN soul))))) (. .)))";
-            Tree mobyParse = AnalysisUtilities.getInstance().readTreeFromString(parseStr);
-            Collection<Question> output = ss.simplify(mobyParse);
-            for (Question q : output) {
+            final String parseStr = "(ROOT (S (SBAR (IN As) (S (NP (PRP they)) (VP (VBD narrated) (PP (TO to) (NP (DT each) (NN other))) (NP (NP (PRP$ their) (JJ unholy) (NNS adventures)) (, ,) (NP (NP (PRP$ their) (NNS tales)) (PP (IN of) (NP (NN terror))) (VP (VBN told) (PP (IN in) (NP (NNS words) (PP (IN of) (NP (NN mirth))))))))))) (: ;) (SBAR (IN as) (S (NP (PRP$ their) (JJ uncivilized) (NN laughter)) (VP (VBD forked) (ADVP (RB upwards)) (PP (IN out) (IN of) (NP (PRP them))) (, ,) (PP (IN like) (NP (NP (DT the) (NNS flames)) (PP (IN from) (NP (DT the) (NN furnace)))))))) (: ;) (SBAR (IN as) (S (ADVP (TO to) (CC and) (RB fro)) (, ,) (PP (IN in) (NP (PRP$ their) (NN front))) (, ,) (NP (DT the) (NNS harpooneers)) (VP (ADVP (RB wildly)) (VBD gesticulated) (PP (IN with) (NP (PRP$ their) (JJ huge) (NP (JJ pronged) (NNS forks)) (CC and) (NNS dippers)))))) (: ;) (SBAR (IN as) (S (S (NP (DT the) (NN wind)) (VP (VBD howled) (PRT (RP on)))) (, ,) (CC and) (S (NP (DT the) (NN sea)) (VP (VBD leaped))) (, ,) (CC and) (S (NP (DT the) (NN ship)) (VP (VP (VBD groaned) (CC and) (VBD dived)) (, ,) (CC and) (RB yet) (VP (VP (ADVP (RB steadfastly)) (VBD shot) (NP (PRP$ her) (JJ red) (NN hell)) (ADVP (RBR further) (CC and) (RBR further)) (PP (IN into) (NP (NP (DT the) (NN blackness)) (PP (IN of) (NP (NP (DT the) (NN sea)) (CC and) (NP (DT the) (NN night))))))) (, ,) (CC and) (VP (ADVP (RB scornfully)) (VBD champed) (NP (NP (DT the) (JJ white) (NN bone)) (PP (IN in) (PRP$ her) (NP (NN mouth))))) (, ,) (CC and) (VP (ADVP (RB viciously)) (VBD spat) (PP (IN round) (NP (PRP her))) (PP (IN on) (NP (DT all) (NNS sides))))))))) (: ;) (ADVP (RB then)) (NP (NP (DT the) (JJ rushing) (NNP Pequod)) (, ,) (VP (VP (VBN freighted) (PP (IN with) (NP (NN savages)))) (, ,) (CC and) (VP (VBN laden) (PP (IN with) (NP (NN fire)))) (, ,) (CC and) (VP (VBG burning) (NP (DT a) (NN corpse))) (, ,) (CC and) (VP (VBG plunging) (PP (IN into) (NP (NP (DT that) (NN blackness)) (PP (IN of) (NP (NN darkness))))))) (, ,)) (VP (VBD seemed) (NP (NP (DT the) (JJ material) (NN counterpart)) (PP (IN of) (NP (NP (PRP$ her) (JJ monomaniac) (NN commander) (POS 's)) (NN soul))))) (. .)))";
+            final Tree mobyParse = AnalysisUtilities.readTreeFromString(parseStr);
+            final Collection<Question> output = ss.simplify(mobyParse);
+            for (final Question q : output) {
                 System.out.println(AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree()));
                 // System.out.println(q.findLogicalWordsAboveIntermediateTree());
             }
@@ -1415,10 +1483,11 @@ public class SentenceSimplifier {
         Tree parsed;
 
         // pre-load
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("Enter sentence: ");
+        }
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
             if (treeInput) {
                 doc = "";
@@ -1426,12 +1495,13 @@ public class SentenceSimplifier {
                 doc += buf + " ";
                 while (br.ready()) {
                     buf = br.readLine();
-                    if (buf == null)
+                    if (buf == null) {
                         break;
+                    }
                     doc += buf;
                 }
-                Tree t = AnalysisUtilities.getInstance().readTreeFromString(doc);
-                for (Question q : ss.simplify(t)) {
+                final Tree t = AnalysisUtilities.readTreeFromString(doc);
+                for (final Question q : ss.simplify(t)) {
                     System.out.println(AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree()));
                 }
                 System.exit(0);
@@ -1458,65 +1528,73 @@ public class SentenceSimplifier {
                     break;
                 }
 
-                long startTime = System.currentTimeMillis();
+                final long startTime = System.currentTimeMillis();
 
-                List<String> sentences = AnalysisUtilities.getSentences(doc);
+                final List<String> sentences = AnalysisUtilities.getSentences(doc);
 
                 // iterate over each segmented sentence and generate questions
-                List<Question> output = new ArrayList<Question>();
+                final List<Question> output = new ArrayList<Question>();
 
-                for (String sentence : sentences) {
-                    parsed = AnalysisUtilities.getInstance().parseSentence(sentence).parse;
-                    if (GlobalProperties.getDebug())
+                for (final String sentence : sentences) {
+                    parsed = AnalysisUtilities.parseSentence(sentence).getTree();
+                    if (GlobalProperties.getDebug()) {
                         System.err.println("input: " + parsed.yield().toString());
-                    if (GlobalProperties.getDebug())
+                    }
+                    if (GlobalProperties.getDebug()) {
                         System.err.println("parse: " + sentence.toString());
+                    }
                     // if no parse, print the original sentence
                     if (parsed.yield().toString().equals(".")) {
                         System.out.print(sentence);
-                        if (verbose)
+                        if (verbose) {
                             System.out.print("\t" + sentence);
+                        }
                         System.out.println();
                         continue;
                     }
 
                     output.clear();
                     output.addAll(ss.simplify(parsed));
-                    for (Question q : output) {
+                    for (final Question q : output) {
                         System.out.print(AnalysisUtilities.getCleanedUpYield(q.getIntermediateTree()));
-                        if (verbose)
+                        if (verbose) {
                             System.out.print("\t" + AnalysisUtilities.getCleanedUpYield(q.getSourceTree()));
-                        if (verbose)
+                        }
+                        if (verbose) {
                             System.out.print("\t" + simplificationFeatureString(q));
+                        }
                         // System.out.println(q.findLogicalWordsAboveIntermediateTree());
                         System.out.println();
                     }
                 }
 
-                System.err.println("Seconds Elapsed:\t" + ((System.currentTimeMillis() - startTime) / 1000.0));
+                System.err.println("Seconds Elapsed:\t" + (System.currentTimeMillis() - startTime) / 1000.0);
                 // prompt for another piece of input text
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println("\nInput Text:");
+                }
             }
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
 
     }
 
-    public void setMainClauseOnly(boolean b) {
+    public void setMainClauseOnly(final boolean b) {
         mainClauseOnly = b;
     }
 
-    private boolean     mainClauseOnly             = false;
-    private long        numSimplifyHelperCalls;            // for debugging, counts the number of call to simplifyHelper to check that duplicate
-                                                            // derivations are avoided
+    private boolean           mainClauseOnly             = false;
+    private long              numSimplifyHelperCalls;            // for debugging, counts the number of call to simplifyHelper to check that
+                                                                  // duplicate
+                                                                  // derivations are avoided
 
-    private boolean     breakNPs                   = false; // whether to break conjunctions of noun phrases (e.g., John and I are friends.)
-    private boolean     extractFromVerbComplements = false; // whether to extract from complements (e.g., John thought that I studied -> I studied)
+    private boolean           breakNPs                   = false; // whether to break conjunctions of noun phrases (e.g., John and I are friends.)
+    private boolean           extractFromVerbComplements = false; // whether to extract from complements (e.g., John thought that I studied -> I
+                                                                  // studied)
 
-    private TreeFactory factory;
-    private Set<String> verbsThatImplyComplements  = null; // not yet fully implemented, can be ignored
+    private final TreeFactory factory;
+    private Set<String>       verbsThatImplyComplements  = null; // not yet fully implemented, can be ignored
 
 }

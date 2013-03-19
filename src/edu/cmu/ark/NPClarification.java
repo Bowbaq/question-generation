@@ -2,14 +2,10 @@ package edu.cmu.ark;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.*;
-
-import edu.stanford.nlp.trees.Tree;
-import edu.stanford.nlp.trees.tregex.TregexMatcher;
-import edu.stanford.nlp.trees.tregex.TregexPattern;
-import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
-import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
-import edu.stanford.nlp.util.Pair;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import arkref.analysis.ARKref;
 import arkref.analysis.FindMentions;
@@ -19,17 +15,23 @@ import arkref.analysis.Types;
 import arkref.data.Document;
 import arkref.data.Mention;
 import arkref.parsestuff.TregexPatternFactory;
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.trees.tregex.TregexMatcher;
+import edu.stanford.nlp.trees.tregex.TregexPattern;
+import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
+import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
+import edu.stanford.nlp.util.Pair;
 
 public class NPClarification {
     public NPClarification() {
         ARKref.Opts.propertiesFile = GlobalProperties.getProperties().getProperty("propertiesFilePath");
     }
 
-    public void resolveCoreference(List<Tree> origdoc) {
-        List<Tree> trees = new ArrayList<Tree>();
-        List<String> entityStrings = new ArrayList<String>();
+    public void resolveCoreference(final List<Tree> origdoc) {
+        final List<Tree> trees = new ArrayList<Tree>();
+        final List<String> entityStrings = new ArrayList<String>();
 
-        for (Tree t : origdoc) {
+        for (final Tree t : origdoc) {
             Document.addNPsAbovePossessivePronouns(t);
             Document.addInternalNPStructureForRoleAppositives(t);
             trees.add(t);
@@ -43,10 +45,10 @@ public class NPClarification {
         RefsToEntities.go(doc);
     }
 
-    private String convertSupersensesToEntityString(Tree t, List<String> supersenses) {
+    private String convertSupersensesToEntityString(final Tree t, final List<String> supersenses) {
         String res = "";
 
-        List<String> converted = new ArrayList<String>();
+        final List<String> converted = new ArrayList<String>();
         for (int i = 0; i < supersenses.size(); i++) {
             if (supersenses.get(i).endsWith("noun.person")) {
                 converted.add("PERSON");
@@ -55,68 +57,74 @@ public class NPClarification {
             }
         }
 
-        List<Tree> leaves = t.getLeaves();
-        while (leaves.size() > converted.size())
+        final List<Tree> leaves = t.getLeaves();
+        while (leaves.size() > converted.size()) {
             converted.add("0");
+        }
         for (int i = 0; i < leaves.size(); i++) {
-            if (i > 0)
+            if (i > 0) {
                 res += " ";
+            }
             res += leaves.get(i) + "/" + converted.get(i);
         }
 
         return res;
     }
 
-    public static boolean hasPronoun(Tree t) {
-        TregexPattern pat = TregexPatternFactory.getPattern("/^PRP/=pronoun");
-        TregexMatcher matcher = pat.matcher(t);
+    public static boolean hasPronoun(final Tree t) {
+        final TregexPattern pat = TregexPatternFactory.getPattern("/^PRP/=pronoun");
+        final TregexMatcher matcher = pat.matcher(t);
         return matcher.find();
     }
 
-    public static boolean isPronoun(Tree t) {
-        TregexPattern pat = TregexPatternFactory.getPattern("NP !>> __ <<# /^PRP/=pronoun");
-        TregexMatcher matcher = pat.matcher(t);
+    public static boolean isPronoun(final Tree t) {
+        final TregexPattern pat = TregexPatternFactory.getPattern("NP !>> __ <<# /^PRP/=pronoun");
+        final TregexMatcher matcher = pat.matcher(t);
         return matcher.find();
     }
 
-    public List<Question> clarifyNPs(List<Question> treeSet, boolean clarifyPronouns, boolean clarifyNonPronouns) {
-        List<Question> newTrees = new ArrayList<Question>();
+    public List<Question> clarifyNPs(final List<Question> treeSet, final boolean clarifyPronouns, final boolean clarifyNonPronouns) {
+        final List<Question> newTrees = new ArrayList<Question>();
 
         // arrays for return values from findReplacement
-        List<Boolean> retModified = new ArrayList<Boolean>();
-        List<Boolean> retResolvedPronounsIfNecessary = new ArrayList<Boolean>();
-        List<Boolean> retHadPronouns = new ArrayList<Boolean>();
+        final List<Boolean> retModified = new ArrayList<Boolean>();
+        final List<Boolean> retResolvedPronounsIfNecessary = new ArrayList<Boolean>();
+        final List<Boolean> retHadPronouns = new ArrayList<Boolean>();
         Tree replacement;
 
-        for (Question q : treeSet) {
+        for (final Question q : treeSet) {
             boolean modified = false;
             boolean resolvedPronounsIfNecessary = true;
             boolean hadPronouns = false;
-            Question qCopy = q.deeperCopy();
-            Tree qRoot = qCopy.getIntermediateTree();
+            final Question qCopy = q.deeperCopy();
+            final Tree qRoot = qCopy.getIntermediateTree();
 
-            List<Tree> replacedMentionTrees = new ArrayList<Tree>();
-            List<Tree> replacementMentionTrees = new ArrayList<Tree>();
+            final List<Tree> replacedMentionTrees = new ArrayList<Tree>();
+            final List<Tree> replacementMentionTrees = new ArrayList<Tree>();
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("NPClarification processing: " + qRoot.yield().toString());
+            }
 
             // iterate over mentions in the input tree
-            List<Tree> sentenceMentionNodes = FindMentions.findMentionNodes(qRoot);
-            Set<Tree> alreadySeenNodes = new HashSet<Tree>();
-            for (Tree qMentionNode : sentenceMentionNodes) {
+            final List<Tree> sentenceMentionNodes = FindMentions.findMentionNodes(qRoot);
+            final Set<Tree> alreadySeenNodes = new HashSet<Tree>();
+            for (final Tree qMentionNode : sentenceMentionNodes) {
 
-                if (isPronoun(qMentionNode) && !clarifyPronouns)
+                if (isPronoun(qMentionNode) && !clarifyPronouns) {
                     continue;
-                if (!isPronoun(qMentionNode) && !clarifyNonPronouns)
+                }
+                if (!isPronoun(qMentionNode) && !clarifyNonPronouns) {
                     continue;
+                }
 
                 // if the input contains multiple instances of the same node,
                 // only replace the first one (e.g., as in "He thought he could win.")
                 // this works in conjunction with the later call to isFirstMentionOfEntityInSentence,
                 // which handles cases like "John thought he could win" (where he = John).
-                if (alreadySeenNodes.contains(qMentionNode))
+                if (alreadySeenNodes.contains(qMentionNode)) {
                     continue;
+                }
                 alreadySeenNodes.add(qMentionNode);
 
                 replacement = findAndReplace(qMentionNode, sentenceMentionNodes, qRoot, qCopy.getSourceSentenceNumber(), clarifyNonPronouns, retHadPronouns, retResolvedPronounsIfNecessary, retModified);
@@ -131,9 +139,10 @@ public class NPClarification {
                 hadPronouns |= retHadPronouns.get(0);
             }
 
-            if (modified && (!hadPronouns || (hadPronouns && resolvedPronounsIfNecessary))) {
-                if (GlobalProperties.getDebug())
+            if (modified && (!hadPronouns || hadPronouns && resolvedPronounsIfNecessary)) {
+                if (GlobalProperties.getDebug()) {
                     System.err.println("NPClarification added: " + qCopy.getIntermediateTree().yield().toString());
+                }
 
                 extractClarificationFeatures(qCopy, replacedMentionTrees, replacementMentionTrees);
                 newTrees.add(qCopy);
@@ -141,8 +150,9 @@ public class NPClarification {
             }
 
             if (!modified && resolvedPronounsIfNecessary && hadPronouns) {
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println("NPClarification resolved pronouns in: " + q.getIntermediateTree().yield().toString());
+                }
                 // set the NPC feature for the ORIGINAL tree (we don't need to add it), not the copy
                 q.setFeatureValue("performedNPClarification", 1.0);
             }
@@ -152,7 +162,7 @@ public class NPClarification {
         return newTrees;
     }
 
-    private void extractClarificationFeatures(Question qCopy, List<Tree> replacedMentionTrees, List<Tree> replacementMentionTrees) {
+    private void extractClarificationFeatures(final Question qCopy, final List<Tree> replacedMentionTrees, final List<Tree> replacementMentionTrees) {
 
         qCopy.setFeatureValue("performedNPClarification", 1.0);
         String treeName;
@@ -179,7 +189,7 @@ public class NPClarification {
             double numConjunctions = 0.0;
             double numPronouns = 0.0;
 
-            for (Tree tree : treeList) {
+            for (final Tree tree : treeList) {
                 SpecificityAnalyzer.getInstance().analyze(tree);
                 numVagueNPs += SpecificityAnalyzer.getInstance().getNumVagueNPs();
                 length += tree.yield().size();
@@ -222,7 +232,7 @@ public class NPClarification {
      * @param qSentNumber
      * @return
      */
-    private Tree findAndReplace(Tree mentionNode, List<Tree> sentenceMentionNodes, Tree sentenceRoot, int qSentNumber, boolean clarifyNonPronouns, List<Boolean> retHadPronouns, List<Boolean> retResolvedPronounsIfNecessary, List<Boolean> retModified) {
+    private Tree findAndReplace(final Tree mentionNode, final List<Tree> sentenceMentionNodes, final Tree sentenceRoot, final int qSentNumber, final boolean clarifyNonPronouns, final List<Boolean> retHadPronouns, final List<Boolean> retResolvedPronounsIfNecessary, final List<Boolean> retModified) {
         boolean modified = false;
         boolean resolvedPronounsIfNecessary = true;
         boolean hadPronouns = false;
@@ -231,8 +241,8 @@ public class NPClarification {
         // iterate over document mentions to find a match
         for (int i = 0; i < doc.mentions().size(); i++) {
             replacementCopy = null;
-            Mention m = doc.mentions().get(i);
-            int mentionSentenceNum = m.getSentence().ID();
+            final Mention m = doc.mentions().get(i);
+            final int mentionSentenceNum = m.getSentence().ID();
 
             // skip the tree if its not the same sentence as the mention
             if (mentionSentenceNum != qSentNumber) {
@@ -260,7 +270,7 @@ public class NPClarification {
             // }
 
             // find best mention to replace this with
-            Mention replacement = findReplacementByFirstMention(m);
+            final Mention replacement = findReplacementByFirstMention(m);
             // don't replace if the replacement is identical
             if (replacement.node().yield().toString().equalsIgnoreCase(mentionNode.yield().toString())) {
                 continue;
@@ -290,15 +300,15 @@ public class NPClarification {
                 replacementCopy = simplifyMentionTree(replacementCopy);
 
                 if (isPossessiveNP(m.node()) && !isPossessiveNP(replacement.node())) {
-                    replacementCopy.addChild(AnalysisUtilities.getInstance().readTreeFromString("(POS 's)"));
+                    replacementCopy.addChild(AnalysisUtilities.readTreeFromString("(POS 's)"));
                 }
                 if (!isPossessiveNP(m.node()) && isPossessiveNP(replacement.node())) {
                     // remove the POS node
-                    List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
-                    List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
-                    TregexPattern matchPattern = TregexPatternFactory.getPattern("POS=pos");
+                    final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+                    final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+                    final TregexPattern matchPattern = TregexPatternFactory.getPattern("POS=pos");
                     ps.add(Tsurgeon.parseOperation("prune pos"));
-                    TsurgeonPattern p = Tsurgeon.collectOperations(ps);
+                    final TsurgeonPattern p = Tsurgeon.collectOperations(ps);
                     ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
                     Tsurgeon.processPatternsOnTree(ops, replacementCopy);
 
@@ -306,7 +316,7 @@ public class NPClarification {
                 AnalysisUtilities.downcaseFirstToken(replacementCopy);
 
                 // insert the copy into the input tree
-                Tree qParent = mentionNode.parent(sentenceRoot);
+                final Tree qParent = mentionNode.parent(sentenceRoot);
                 // if we already replaced a parent node, skip
                 if (qParent == null) {
                     continue;
@@ -341,16 +351,16 @@ public class NPClarification {
      * @param qSentNumber
      * @return
      */
-    private Tree createCopyWithNestedMentionsClarified(Mention replacement, List<Tree> sentenceMentionNodes) {
-        Tree copy = replacement.node().deeperCopy();
+    private Tree createCopyWithNestedMentionsClarified(final Mention replacement, final List<Tree> sentenceMentionNodes) {
+        final Tree copy = replacement.node().deeperCopy();
 
         // consider all nodes dominated by the replacement
-        for (Mention other : doc.mentions()) {
+        for (final Mention other : doc.mentions()) {
             if (!replacement.node().dominates(other.node())) {
                 continue;
             }
 
-            for (Tree t : copy) {
+            for (final Tree t : copy) {
                 if (t.equals(other.node())) {
                     findAndReplace(t, sentenceMentionNodes, copy, other.getSentence().ID(), true, new ArrayList<Boolean>(), new ArrayList<Boolean>(), new ArrayList<Boolean>());
                 }
@@ -370,11 +380,11 @@ public class NPClarification {
      * @param mentionNodesInCurrentSentence
      * @return
      */
-    private boolean isFirstMentionOfEntityInSentence(Mention mentionInOriginalDocument, Tree mentionNodeInCurrentSentence, List<Tree> mentionNodesInCurrentSentence) {
-        int mentionIndex = mentionNodesInCurrentSentence.indexOf(mentionNodeInCurrentSentence);
+    private boolean isFirstMentionOfEntityInSentence(final Mention mentionInOriginalDocument, final Tree mentionNodeInCurrentSentence, final List<Tree> mentionNodesInCurrentSentence) {
+        final int mentionIndex = mentionNodesInCurrentSentence.indexOf(mentionNodeInCurrentSentence);
 
         // iterate over mentions that are linked with the given mention m
-        for (Mention linkedMention : doc.entGraph().getLinkedMentions(mentionInOriginalDocument)) {
+        for (final Mention linkedMention : doc.entGraph().getLinkedMentions(mentionInOriginalDocument)) {
 
             // skip the linked mention if it is not in the same sentence
             if (linkedMention.getSentence().ID() != mentionInOriginalDocument.getSentence().ID()) {
@@ -386,9 +396,9 @@ public class NPClarification {
             // if the linked mention matches a tree object,
             // then return false to indicate that the given mention node is
             // not the first mention of its entity (because linkedmention is).
-            Tree linkedMentionHead = linkedMention.getHeadNode();
+            final Tree linkedMentionHead = linkedMention.getHeadNode();
             for (int i = 0; i < mentionIndex; i++) {
-                if (caseInsensitiveNodeMatch(linkedMentionHead, mentionNodesInCurrentSentence.get(i).headTerminal(AnalysisUtilities.getInstance().getHeadFinder())))
+                if (caseInsensitiveNodeMatch(linkedMentionHead, mentionNodesInCurrentSentence.get(i).headTerminal(AnalysisUtilities.getHeadFinder())))
                 {
                     return false;
                 }
@@ -399,10 +409,10 @@ public class NPClarification {
         return true;
     }
 
-    private Mention findReplacementByFirstMention(Mention m) {
+    private Mention findReplacementByFirstMention(final Mention m) {
         Mention res = m;
         int minID = m.ID();
-        for (Mention other : doc.entGraph().getLinkedMentions(m)) {
+        for (final Mention other : doc.entGraph().getLinkedMentions(m)) {
             if (other.ID() < minID) {
                 res = other;
                 minID = other.ID();
@@ -416,10 +426,10 @@ public class NPClarification {
         return doc;
     }
 
-    public static boolean isPossessiveNP(Tree tree) {
-        String patS = "NP=parentnp [ < /^PRP\\$/ | < POS ] !> __";
-        TregexPattern pat = TregexPatternFactory.getPattern(patS);
-        TregexMatcher matcher = pat.matcher(tree);
+    public static boolean isPossessiveNP(final Tree tree) {
+        final String patS = "NP=parentnp [ < /^PRP\\$/ | < POS ] !> __";
+        final TregexPattern pat = TregexPatternFactory.getPattern(patS);
+        final TregexMatcher matcher = pat.matcher(tree);
         return matcher.find();
     }
 
@@ -429,17 +439,17 @@ public class NPClarification {
      * @param input
      * @return
      */
-    public Tree simplifyMentionTree(Tree input) {
+    public Tree simplifyMentionTree(final Tree input) {
         String tregexOpStr;
         TregexPattern matchPattern;
-        Tree res = input;
+        final Tree res = input;
 
         // if the head is a proper noun, return the NP subtree dominating the head
-        Tree newHead = input.headPreTerminal(AnalysisUtilities.getInstance().getHeadFinder());
+        Tree newHead = input.headPreTerminal(AnalysisUtilities.getHeadFinder());
 
         boolean hasCommaSubtree = false;
         boolean hasParenthesesSubtree = false;
-        for (Tree subtree : input.getChildrenAsList()) {
+        for (final Tree subtree : input.getChildrenAsList()) {
             if (subtree.label().toString().equals(",")) {
                 hasCommaSubtree = true;
             }
@@ -451,7 +461,7 @@ public class NPClarification {
         if (matchPattern.matcher(input).find()) {
             hasParenthesesSubtree = true;
 
-            List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+            final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
             TsurgeonPattern p;
             ps.add(Tsurgeon.parseOperation("prune paren"));
             p = Tsurgeon.collectOperations(ps);
@@ -465,12 +475,12 @@ public class NPClarification {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         if (matchPattern.matcher(input).find()) {
             hasParenthesesSubtree = true;
-            List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+            final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
             ps = new ArrayList<TsurgeonPattern>();
             ps.add(Tsurgeon.parseOperation("prune leadingpunc"));
             ps.add(Tsurgeon.parseOperation("prune parenthetical"));
             ps.add(Tsurgeon.parseOperation("prune trailingpunc"));
-            TsurgeonPattern p = Tsurgeon.collectOperations(ps);
+            final TsurgeonPattern p = Tsurgeon.collectOperations(ps);
             ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
 
             Tsurgeon.processPatternsOnTree(ops, input);
@@ -486,11 +496,11 @@ public class NPClarification {
             tregexOpStr = "__=mention !> __ < /,/=comma << NP=np";
 
             matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-            TregexMatcher m = matchPattern.matcher(input);
+            final TregexMatcher m = matchPattern.matcher(input);
             Tree np;
             while (m.find()) {
                 np = m.getNode("np");
-                Tree subtreeHead = np.headPreTerminal(AnalysisUtilities.getInstance().getHeadFinder());
+                final Tree subtreeHead = np.headPreTerminal(AnalysisUtilities.getHeadFinder());
                 if (subtreeHead.label().toString().equals("NNP") || subtreeHead.label().toString().equals("NNPS")) {
                     newHead = subtreeHead;
                     break;
@@ -498,7 +508,7 @@ public class NPClarification {
             }
         }
 
-        for (Tree subtree : input.getChildrenAsList()) {
+        for (final Tree subtree : input.getChildrenAsList()) {
             if (subtree.dominates(newHead)) {
                 return subtree;
             }
@@ -507,22 +517,23 @@ public class NPClarification {
         return res;
     }
 
-    public static boolean caseInsensitiveNodeMatch(Tree n1, Tree n2) {
+    public static boolean caseInsensitiveNodeMatch(final Tree n1, final Tree n2) {
         return n1.toString().equalsIgnoreCase(n2.toString());
     }
 
     /**
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
             GlobalProperties.setDebug(true);
             // ARKref.Opts.debug = true;
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("\nInput Text:");
+            }
             String doc;
 
             while (true) {
@@ -546,16 +557,16 @@ public class NPClarification {
                     break;
                 }
 
-                List<String> sentences = AnalysisUtilities.getSentences(doc);
-                List<Question> questions = new ArrayList<Question>();
-                List<Tree> trees = new ArrayList<Tree>();
+                final List<String> sentences = AnalysisUtilities.getSentences(doc);
+                final List<Question> questions = new ArrayList<Question>();
+                final List<Tree> trees = new ArrayList<Tree>();
 
                 int sentenceNum = 0;
-                for (String s : sentences) {
-                    Tree t = AnalysisUtilities.getInstance().parseSentence(s).parse;
+                for (final String s : sentences) {
+                    final Tree t = AnalysisUtilities.parseSentence(s).getTree();
                     trees.add(t);
 
-                    Question q = new Question();
+                    final Question q = new Question();
                     q.setSourceTree(t);
                     q.setSourceSentenceNumber(sentenceNum);
                     q.setIntermediateTree(t);
@@ -564,21 +575,21 @@ public class NPClarification {
                     sentenceNum++;
                 }
 
-                NPClarification npc = new NPClarification();
+                final NPClarification npc = new NPClarification();
                 npc.resolveCoreference(trees);
 
                 // Normally, we would perform some transformations right here,
                 // but for this class we just print out clarified versions of the original sentences.
 
-                List<Question> newTrees = npc.clarifyNPs(questions, true, true);
+                final List<Question> newTrees = npc.clarifyNPs(questions, true, true);
 
-                for (Question q : newTrees) {
+                for (final Question q : newTrees) {
                     System.out.println(q.getIntermediateTree().yield().toString());
                 }
 
             }
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
 

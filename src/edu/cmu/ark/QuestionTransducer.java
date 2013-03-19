@@ -23,16 +23,27 @@
 
 package edu.cmu.ark;
 
-import edu.stanford.nlp.trees.*;
-import edu.stanford.nlp.util.*;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.NumberFormat;
-import java.util.regex.*;
-import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import edu.stanford.nlp.trees.tregex.tsurgeon.*;
-import edu.stanford.nlp.trees.tregex.*;
+import edu.cmu.ark.data.ParseResult;
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.trees.tregex.TregexMatcher;
+import edu.stanford.nlp.trees.tregex.TregexPattern;
+import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
+import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
+import edu.stanford.nlp.util.Pair;
 
 /**
  * Class for converting declarative statements into questions.
@@ -54,19 +65,20 @@ public class QuestionTransducer {
      * 
      * @param givenQuestions
      */
-    public static void removeDuplicateQuestions(Collection<Question> givenQuestions) {
-        Map<String, Question> yieldMap = new HashMap<String, Question>();
+    public static void removeDuplicateQuestions(final Collection<Question> givenQuestions) {
+        final Map<String, Question> yieldMap = new HashMap<String, Question>();
         String yield;
 
         // add questions that used NP Clarification first
-        for (Question q : givenQuestions) {
+        for (final Question q : givenQuestions) {
             if (q.getFeatureValue("performedNPClarification") == 0.0) {
                 continue;
             }
             yield = q.getTree().yield().toString();
             if (yieldMap.containsKey(yield)) {
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println("Removing duplicate: " + yield);
+                }
                 continue;
             }
 
@@ -74,18 +86,19 @@ public class QuestionTransducer {
         }
 
         // now add any new questions that don't involve NP Clarification
-        for (Question q : givenQuestions) {
+        for (final Question q : givenQuestions) {
             if (q.getFeatureValue("performedNPClarification") == 1.0) {
                 continue;
             }
             yield = q.getTree().yield().toString();
             if (yieldMap.containsKey(yield)) {
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println("Removing duplicate: " + yield);
+                }
 
                 // if a previous question that involved NP Clarification has the same yield (i.e., text),
                 // then mark it as using NP Clarification for the answer only
-                Question other = yieldMap.get(yield);
+                final Question other = yieldMap.get(yield);
                 if (other.getFeatureValue("performedNPClarification") == 1.0 && other.getSourceSentenceNumber() == q.getSourceSentenceNumber()) {
                     // other.setFeatureValue("performedNPClarificationAnswerOnly", 1.0);
                     other.setFeatureValue("performedNPClarification", 0.0);
@@ -111,7 +124,7 @@ public class QuestionTransducer {
      * @param q
      * @return
      */
-    public static boolean containsUnresolvedPronounsOrDemonstratives(Question q) {
+    public static boolean containsUnresolvedPronounsOrDemonstratives(final Question q) {
         boolean res = false;
         String tregexOpStr;
         TregexPattern matchPattern;
@@ -135,13 +148,13 @@ public class QuestionTransducer {
         return res;
     }
 
-    public void generateQuestionsFromParse(String inputParseStr) {
-        Tree inputTree = AnalysisUtilities.getInstance().readTreeFromString(inputParseStr);
+    public void generateQuestionsFromParse(final String inputParseStr) {
+        final Tree inputTree = AnalysisUtilities.readTreeFromString(inputParseStr);
         generateQuestionsFromParse(inputTree);
     }
 
-    public void generateQuestionsFromParse(Tree inputTree) {
-        Question q = new Question();
+    public void generateQuestionsFromParse(final Tree inputTree) {
+        final Question q = new Question();
         q.setSourceTree(inputTree);
         q.setIntermediateTree(inputTree.deeperCopy());
         generateQuestionsFromParse(q);
@@ -153,25 +166,27 @@ public class QuestionTransducer {
      * 
      * @param inputQuestion
      */
-    public void generateQuestionsFromParse(Question inputQuestion) {
+    public void generateQuestionsFromParse(final Question inputQuestion) {
         // initialize the array used to store the output questions
         questions = new ArrayList<Question>();
 
         // check if this is a sentence we want to create questions from.
         // E.g., avoid blank sentences, fragments, and sentences that are already questions
         if (!isUsableInputSentence(inputQuestion.getIntermediateTree())) {
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("Not a usable sentence.");
+            }
             return;
         }
 
         Tree answerPhrase;
-        Question tmp1 = inputQuestion.deeperCopy();
+        final Question tmp1 = inputQuestion.deeperCopy();
         Question tmp2 = null;
         List<Tree> outputTrees;
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("getQuestionsFromParse: input: " + tmp1.toString());
+        }
 
         whGen.setCurrentQuestion(tmp1);
         tmp1.setTree(tmp1.getIntermediateTree().deeperCopy());
@@ -182,8 +197,9 @@ public class QuestionTransducer {
         // either due to syntactic constraints or conservative restrictions
         tmp1.setTree(markUnmovablePhrases(tmp1.getTree()));
         tmp1.setTree(markPossibleAnswerPhrases(tmp1.getTree()));
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("Number of Possible WH questions: " + numWHPhrases + "\n");
+        }
 
         // iterate over the possible answer phrases, generate
         // questions for each one
@@ -195,20 +211,24 @@ public class QuestionTransducer {
 
             // check whether the current answer phrase is the subject.
             // if not, then decompose the main verb and perform subject auxiliary inversion
-            boolean subjectMovement = isSubjectMovement(tmp2.getTree(), i);
+            final boolean subjectMovement = isSubjectMovement(tmp2.getTree(), i);
             if (subjectMovement) {
                 ensureVerbAgreementForSubjectWH(tmp2.getTree());
-                if (GlobalProperties.getComputeFeatures())
+                if (GlobalProperties.getComputeFeatures()) {
                     tmp2.setFeatureValue("isSubjectMovement", 1.0);
-                if (GlobalProperties.getComputeFeatures())
+                }
+                if (GlobalProperties.getComputeFeatures()) {
                     tmp2.setFeatureValue("whQuestion", 1.0);
+                }
             } else {
                 tmp2.setTree(decomposePredicate(tmp2.getTree()));
                 tmp2.setTree(subjectAuxiliaryInversion(tmp2.getTree()));
-                if (GlobalProperties.getComputeFeatures())
+                if (GlobalProperties.getComputeFeatures()) {
                     tmp2.setFeatureValue("isSubjectMovement", 0.0);
-                if (GlobalProperties.getComputeFeatures())
+                }
+                if (GlobalProperties.getComputeFeatures()) {
                     tmp2.setFeatureValue("whQuestion", 1.0);
+                }
             }
             tmp2.setTree(relabelMainClause(tmp2.getTree()));
 
@@ -219,25 +239,28 @@ public class QuestionTransducer {
             outputTrees = moveWHPhrase(tmp2.getTree(), tmp2.getIntermediateTree(), i, subjectMovement);
 
             // post-process and filter the output
-            for (Tree t : outputTrees) {
+            for (final Tree t : outputTrees) {
                 tmp2 = tmp2.deeperCopy();
                 tmp2.setTree(t);
                 AnalysisUtilities.upcaseFirstToken(tmp2.getTree());
 
                 relabelPunctuationAsQuestionMark(tmp2.getTree());
                 tmp2.setAnswerPhraseTree(answerPhrase);
-                if (GlobalProperties.getComputeFeatures())
+                if (GlobalProperties.getComputeFeatures()) {
                     QuestionFeatureExtractor.getInstance().extractFinalFeatures(tmp2);
+                }
 
-                if (avoidPronounsAndDemonstratives && (containsUnresolvedPronounsOrDemonstratives(tmp2))) {
-                    if (GlobalProperties.getDebug())
+                if (avoidPronounsAndDemonstratives && containsUnresolvedPronounsOrDemonstratives(tmp2)) {
+                    if (GlobalProperties.getDebug()) {
                         System.err.println("generateQuestionsFromParse: skipping due to pronouns");
+                    }
                 } else {
                     questions.add(tmp2);
                 }
 
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println();
+                }
             }
         }
 
@@ -252,30 +275,35 @@ public class QuestionTransducer {
             relabelPunctuationAsQuestionMark(tmp2.getTree());
             AnalysisUtilities.upcaseFirstToken(tmp2.getTree());
             tmp2.setAnswerPhraseTree(null);
-            if (GlobalProperties.getComputeFeatures())
+            if (GlobalProperties.getComputeFeatures()) {
                 tmp2.setFeatureValue("isSubjectMovement", 0.0);
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 tmp2.setFeatureValue("whQuestion", 0.0);
-            if (GlobalProperties.getComputeFeatures())
+            }
+            if (GlobalProperties.getComputeFeatures()) {
                 QuestionFeatureExtractor.getInstance().extractFinalFeatures(tmp2);
+            }
 
             if (avoidPronounsAndDemonstratives && containsUnresolvedPronounsOrDemonstratives(tmp2)) {
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println("generateQuestionsFromParse: skipping due to pronouns");
+                }
             } else {
                 questions.add(tmp2);
             }
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println();
+            }
         }
 
     }
 
-    private void relabelPunctuationAsQuestionMark(Tree inputTree) {
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+    private void relabelPunctuationAsQuestionMark(final Tree inputTree) {
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
         String tregexOpStr;
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         TregexPattern matchPattern;
         TsurgeonPattern p;
 
@@ -292,7 +320,7 @@ public class QuestionTransducer {
         tregexOpStr = "/^\\./";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         if (!matchPattern.matcher(inputTree).find()) {
-            inputTree.getChild(0).addChild(AnalysisUtilities.getInstance().readTreeFromString("(. ?)"));
+            inputTree.getChild(0).addChild(AnalysisUtilities.readTreeFromString("(. ?)"));
         }
     }
 
@@ -306,11 +334,11 @@ public class QuestionTransducer {
      * sentence: John met Sally.
      * question: Who did John meet?
      */
-    private boolean isSubjectMovement(Tree inputTree, int i) {
-        String tregexOpStr = "ROOT=root < (S < NP-" + i + "|SBAR-" + i + ")";
-        TregexPattern matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        TregexMatcher matcher = matchPattern.matcher(inputTree);
-        boolean res = matcher.find();
+    private boolean isSubjectMovement(final Tree inputTree, final int i) {
+        final String tregexOpStr = "ROOT=root < (S < NP-" + i + "|SBAR-" + i + ")";
+        final TregexPattern matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
+        final TregexMatcher matcher = matchPattern.matcher(inputTree);
+        final boolean res = matcher.find();
         return res;
     }
 
@@ -319,10 +347,10 @@ public class QuestionTransducer {
      * adverbs that precede verbs in verb phrases (e.g., ''oddly'' in this sentence).
      * This method adjusts for that.
      */
-    private void putLeadingAbverbPhrasesInsideVPs(Tree inputTree) {
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+    private void putLeadingAbverbPhrasesInsideVPs(final Tree inputTree) {
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
         String tregexOpStr;
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         TregexPattern matchPattern;
         TsurgeonPattern p;
 
@@ -334,7 +362,7 @@ public class QuestionTransducer {
         Tsurgeon.processPatternsOnTree(ops, inputTree);
     }
 
-    private Tree markUnmovablePhrases(Tree inputTree) {
+    private Tree markUnmovablePhrases(final Tree inputTree) {
         if (noAnswerPhraseMarking) {
             return inputTree.deeperCopy();
         } else {
@@ -351,8 +379,8 @@ public class QuestionTransducer {
      * Sentence: Darwin studied how SPECIES evolve.
      * Avoided Question: * What did Darwin study how evolve?
      */
-    private Tree markUnmovablePhrasesFull(Tree inputTree) {
-        Tree copyTree = inputTree.deeperCopy();
+    private Tree markUnmovablePhrasesFull(final Tree inputTree) {
+        final Tree copyTree = inputTree.deeperCopy();
 
         // adjunct clauses under verb phrases (following commas)
         markNodesAsUnmovableUsingPattern(copyTree, "ROOT=root << (VP < (S=unmovable $,, /,/))");
@@ -437,8 +465,9 @@ public class QuestionTransducer {
         // anything under an unmovable node
         markNodesAsUnmovableUsingPattern(copyTree, "ROOT=root << (@UNMOVABLE << NP|ADJP|VP|ADVP|PP=unmovable)");
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("markUnmovablePhrases: " + copyTree.toString());
+        }
         return copyTree;
     }
 
@@ -453,9 +482,9 @@ public class QuestionTransducer {
      * 
      * @param inputTree
      */
-    private void markMultipleNPsAsUnmovable(Tree inputTree) {
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+    private void markMultipleNPsAsUnmovable(final Tree inputTree) {
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         TregexPattern matchPattern;
         TsurgeonPattern p;
 
@@ -476,14 +505,15 @@ public class QuestionTransducer {
         Tsurgeon.processPatternsOnTree(ops, inputTree);
     }
 
-    private Tree removeMarkersFromTree(Tree inputTree) {
-        if (inputTree == null)
+    private Tree removeMarkersFromTree(final Tree inputTree) {
+        if (inputTree == null) {
             return null;
+        }
         Tree res;
         String treeStr = inputTree.toString();
         treeStr = treeStr.replaceAll("UNMOVABLE-", "");
         treeStr = treeStr.replaceAll("-\\d+ ", " ");
-        res = AnalysisUtilities.getInstance().readTreeFromString(treeStr);
+        res = AnalysisUtilities.readTreeFromString(treeStr);
         return res;
     }
 
@@ -495,7 +525,7 @@ public class QuestionTransducer {
      * @param inputTree
      * @param tregexOpStr
      */
-    private void markNodesAsUnmovableUsingPattern(Tree inputTree, String tregexOpStr) {
+    private void markNodesAsUnmovableUsingPattern(final Tree inputTree, final String tregexOpStr) {
         TregexPattern matchPattern;
         TregexMatcher matcher;
         String label;
@@ -518,18 +548,19 @@ public class QuestionTransducer {
      * @param i
      * @return
      */
-    private Tree getAnswerPhrase(Tree inputTree, int i) {
+    private Tree getAnswerPhrase(final Tree inputTree, final int i) {
         Tree answerPhrase;
         String tregexOpStr;
         TregexPattern matchPattern;
-        String marker = "/^(NP|PP|SBAR)-" + i + "$/";
+        final String marker = "/^(NP|PP|SBAR)-" + i + "$/";
 
         tregexOpStr = marker + "=answer";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("moveWHPhrase: inputTree:" + inputTree.toString());
+        }
         // if(GlobalProperties.getDebug()) System.err.println("moveWHPhrase: tregexOpStr:" + tregexOpStr);
-        TregexMatcher matcher = matchPattern.matcher(inputTree);
+        final TregexMatcher matcher = matchPattern.matcher(inputTree);
         matcher.find();
         answerPhrase = matcher.getNode("answer");
 
@@ -542,17 +573,17 @@ public class QuestionTransducer {
      * Note: Tsurgeon operations are perhaps not optimal here.
      * Using the Stanford API to move nodes directly might be simpler...
      */
-    private List<Tree> moveWHPhrase(Tree inputTree, Tree intermediateTree, int i, boolean subjectMovement) {
+    private List<Tree> moveWHPhrase(final Tree inputTree, final Tree intermediateTree, final int i, final boolean subjectMovement) {
         Tree copyTree;
         Tree copyTree2;
-        List<Tree> res = new ArrayList<Tree>();
+        final List<Tree> res = new ArrayList<Tree>();
         Tree mainclauseNode;
         Tree prepPlaceholderParent;
 
-        String marker = "/^(NP|PP|SBAR)-" + i + "$/";
+        final String marker = "/^(NP|PP|SBAR)-" + i + "$/";
 
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         String tregexOpStr;
         TregexPattern matchPattern;
         TsurgeonPattern p;
@@ -560,23 +591,26 @@ public class QuestionTransducer {
         // extract the "answer" phrase and generate a WH phrase from it
         tregexOpStr = "ROOT=root < (SQ=qclause << " + marker + "=answer < VP=predicate)";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("moveWHPhrase: inputTree:" + inputTree.toString());
-        if (GlobalProperties.getDebug())
+        }
+        if (GlobalProperties.getDebug()) {
             System.err.println("moveWHPhrase: tregexOpStr:" + tregexOpStr);
+        }
         TregexMatcher matcher = matchPattern.matcher(inputTree);
         matcher.find();
-        Tree phraseToMove = matcher.getNode("answer");
+        final Tree phraseToMove = matcher.getNode("answer");
 
         String whPhraseSubtree;
         String leftOverPreposition;
 
-        if (printExtractedPhrases)
+        if (printExtractedPhrases) {
             System.out.println("EXTRACTED\t" + phraseToMove.yield().toString());
+        }
 
         whGen.generateWHPhraseSubtrees(removeMarkersFromTree(phraseToMove), intermediateTree.yield().toString());
-        List<String> whPhraseSubtrees = whGen.getWHPhraseSubtrees();
-        List<String> leftOverPrepositions = whGen.getLeftOverPrepositions();
+        final List<String> whPhraseSubtrees = whGen.getWHPhraseSubtrees();
+        final List<String> leftOverPrepositions = whGen.getLeftOverPrepositions();
 
         copyTree = inputTree.deeperCopy();
         // The placeholder is necessary because tsurgeon will complain
@@ -599,8 +633,9 @@ public class QuestionTransducer {
             whPhraseSubtree = whPhraseSubtrees.get(j);
             leftOverPreposition = leftOverPrepositions.get(j);
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("moveWHPhrase: whPhraseSubtree:" + whPhraseSubtree);
+            }
             tregexOpStr = "ROOT < (SBARQ=mainclause < PLACEHOLDER=ph1) << (__=ph2Parent < PREPPLACEHOLDER=ph2)";
             matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
             matcher = matchPattern.matcher(copyTree2);
@@ -610,15 +645,15 @@ public class QuestionTransducer {
             mainclauseNode = matcher.getNode("mainclause");
             // replace the wh placeholder with a wh phrase
             mainclauseNode.removeChild(0);
-            mainclauseNode.addChild(0, AnalysisUtilities.getInstance().readTreeFromString(whPhraseSubtree));
+            mainclauseNode.addChild(0, AnalysisUtilities.readTreeFromString(whPhraseSubtree));
 
             // Replace the pp placeholder with the left over preposition.
             // This may happen when the answer phrase was a PP.
             // e.g., John went to the game. -> What did John go to?
             prepPlaceholderParent = matcher.getNode("ph2Parent");
-            int index = prepPlaceholderParent.indexOf(matcher.getNode("ph2"));
+            final int index = prepPlaceholderParent.indexOf(matcher.getNode("ph2"));
             if (leftOverPreposition != null && leftOverPreposition.length() > 0) {
-                prepPlaceholderParent.addChild(index, AnalysisUtilities.getInstance().readTreeFromString(leftOverPreposition));
+                prepPlaceholderParent.addChild(index, AnalysisUtilities.readTreeFromString(leftOverPreposition));
             }
             // now remove the left-over-preposition placeholder
             ps.clear();
@@ -630,8 +665,9 @@ public class QuestionTransducer {
 
             copyTree2 = moveLeadingAdjuncts(copyTree2);
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("moveWHPhrase: " + copyTree2.toString());
+            }
             res.add(copyTree2);
         }
 
@@ -646,11 +682,12 @@ public class QuestionTransducer {
      * leading modifiers are either moved or removed by the simplified
      * factual statement extraction step in stage 1.
      */
-    private Tree moveLeadingAdjuncts(Tree inputTree) {
-        if (GlobalProperties.getDebug())
+    private Tree moveLeadingAdjuncts(final Tree inputTree) {
+        if (GlobalProperties.getDebug()) {
             System.err.println("moveLeadingAdjuncts:" + inputTree.toString());
+        }
 
-        Tree copyTree = inputTree.deeperCopy();
+        final Tree copyTree = inputTree.deeperCopy();
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -705,14 +742,15 @@ public class QuestionTransducer {
         }
 
         // remove extra commas for sentences like "Bill, while walking, saw John."
-        Tree firstChild = copyTree.getChild(0);
+        final Tree firstChild = copyTree.getChild(0);
 
         if (firstChild.getChild(0).label().toString().equals(",")) {
             firstChild.removeChild(0);
         }
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("moveLeadingAdjuncts(out):" + copyTree.toString());
+        }
         return copyTree;
     }
 
@@ -723,12 +761,12 @@ public class QuestionTransducer {
      * e.g., I met John -> I did meet John.
      * (which would later become "Who did I meet?")
      */
-    private Tree decomposePredicate(Tree inputTree) {
-        Tree copyTree = inputTree.deeperCopy();
+    private Tree decomposePredicate(final Tree inputTree) {
+        final Tree copyTree = inputTree.deeperCopy();
 
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
         String tregexOpStr;
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         TregexPattern matchPattern;
         TsurgeonPattern p;
         TregexMatcher matcher;
@@ -760,9 +798,9 @@ public class QuestionTransducer {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(copyTree);
         if (matcher.find()) {
-            Tree subtree = matcher.getNode("tensedverb");
-            String lemma = AnalysisUtilities.getInstance().getLemma(subtree.getChild(0).label().toString(), subtree.label().toString());
-            String aux = getAuxiliarySubtree(subtree);
+            final Tree subtree = matcher.getNode("tensedverb");
+            final String lemma = AnalysisUtilities.getLemma(subtree.getChild(0).label().toString(), subtree.label().toString());
+            final String aux = getAuxiliarySubtree(subtree);
 
             if (!lemma.equals("be")) {
                 ps.add(Tsurgeon.parseOperation("replace predphrase (MAINVP=newpred PLACEHOLDER)"));
@@ -778,7 +816,7 @@ public class QuestionTransducer {
                 tmpNode = matcher.getNode("mainvp");
                 tmpNode.removeChild(0);
                 tmpNode.label().setValue("VP");
-                tmpNode.addChild(0, AnalysisUtilities.getInstance().readTreeFromString(aux));
+                tmpNode.addChild(0, AnalysisUtilities.readTreeFromString(aux));
 
                 matchPattern = TregexPatternFactory.getPattern("VBLEMMA=vblemma");
                 matcher = matchPattern.matcher(copyTree);
@@ -786,12 +824,13 @@ public class QuestionTransducer {
                 tmpNode = matcher.getNode("vblemma");
                 tmpNode.removeChild(0);
                 tmpNode.label().setValue("VB");
-                tmpNode.addChild(0, AnalysisUtilities.getInstance().readTreeFromString(lemma));
+                tmpNode.addChild(0, AnalysisUtilities.readTreeFromString(lemma));
             }
         }
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("decomposePredicate: " + copyTree.toString());
+        }
         return copyTree;
     }
 
@@ -805,14 +844,14 @@ public class QuestionTransducer {
      * Does not affect:
      * He walks -> Who walks?
      */
-    private String getSingularFormSubtree(Tree tensedVerbSubtree) {
+    private String getSingularFormSubtree(final Tree tensedVerbSubtree) {
         String res = "";
-        String lemma = AnalysisUtilities.getInstance().getLemma(tensedVerbSubtree.getChild(0).label().toString(), tensedVerbSubtree.label().toString());
-        String pos = tensedVerbSubtree.value();
+        final String lemma = AnalysisUtilities.getLemma(tensedVerbSubtree.getChild(0).label().toString(), tensedVerbSubtree.label().toString());
+        final String pos = tensedVerbSubtree.value();
         if (pos.equals("VBD")) {
             res = tensedVerbSubtree.toString();
         } else {
-            res = "(VBZ " + AnalysisUtilities.getInstance().getSurfaceForm(lemma, "VBZ") + ")";
+            res = "(VBZ " + AnalysisUtilities.getSurfaceForm(lemma, "VBZ") + ")";
         }
 
         return res;
@@ -828,15 +867,15 @@ public class QuestionTransducer {
      * @param tensedverb
      * @return
      */
-    private String getAuxiliarySubtree(Tree tensedverb) {
+    private String getAuxiliarySubtree(final Tree tensedverb) {
         if (tensedverb == null) {
             return "";
         }
 
         String res = "";
         String label;
-        Pattern p = Pattern.compile("\\((\\S+) [^\\)]*\\)");
-        Matcher m = p.matcher(tensedverb.toString());
+        final Pattern p = Pattern.compile("\\((\\S+) [^\\)]*\\)");
+        final Matcher m = p.matcher(tensedverb.toString());
         m.find();
         label = m.group(1);
 
@@ -860,11 +899,11 @@ public class QuestionTransducer {
      * @param inputTree
      * @return
      */
-    private Tree relabelMainClause(Tree inputTree) {
-        Tree copyTree = inputTree.deeperCopy();
-        String tregexOpStr = "ROOT < S=mainclause";
-        TregexPattern matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        TregexMatcher m = matchPattern.matcher(copyTree);
+    private Tree relabelMainClause(final Tree inputTree) {
+        final Tree copyTree = inputTree.deeperCopy();
+        final String tregexOpStr = "ROOT < S=mainclause";
+        final TregexPattern matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
+        final TregexMatcher m = matchPattern.matcher(copyTree);
         if (m.matches()) {
             m.getNode("mainclause").label().setValue("SQ");
         }
@@ -880,11 +919,11 @@ public class QuestionTransducer {
      * E.g.,
      * John did meet Paul -> Did John meet Paul (which will then become "Who did John meet?")
      */
-    private Tree subjectAuxiliaryInversion(Tree inputTree) {
-        Tree copyTree = inputTree.deeperCopy();
+    private Tree subjectAuxiliaryInversion(final Tree inputTree) {
+        final Tree copyTree = inputTree.deeperCopy();
 
-        List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+        final List<Pair<TregexPattern, TsurgeonPattern>> ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         String tregexOpStr;
         TregexPattern matchPattern;
         TsurgeonPattern p;
@@ -923,8 +962,9 @@ public class QuestionTransducer {
         ops.add(new Pair<TregexPattern, TsurgeonPattern>(matchPattern, p));
         Tsurgeon.processPatternsOnTree(ops, copyTree);
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("subjectAuxiliaryInversion: " + copyTree.toString());
+        }
         return copyTree;
     }
 
@@ -938,7 +978,7 @@ public class QuestionTransducer {
      * Does not affect:
      * He walks -> Who walks?
      */
-    private void ensureVerbAgreementForSubjectWH(Tree inputTree) {
+    private void ensureVerbAgreementForSubjectWH(final Tree inputTree) {
         String tregexOpStr;
         TregexMatcher matcher;
         TregexPattern matchPattern;
@@ -956,14 +996,15 @@ public class QuestionTransducer {
                 matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
                 matcher = matchPattern.matcher(inputTree);
                 if (matcher.find()) {
-                    Tree verbSubtree = matcher.getNode("tensedverb");
-                    Tree vpSubtree = matcher.getNode("verbphrase");
-                    Tree singularFormSubtree = AnalysisUtilities.getInstance().readTreeFromString(getSingularFormSubtree(verbSubtree));
-                    int index = vpSubtree.indexOf(verbSubtree);
+                    final Tree verbSubtree = matcher.getNode("tensedverb");
+                    final Tree vpSubtree = matcher.getNode("verbphrase");
+                    final Tree singularFormSubtree = AnalysisUtilities.readTreeFromString(getSingularFormSubtree(verbSubtree));
+                    final int index = vpSubtree.indexOf(verbSubtree);
                     vpSubtree.removeChild(index);
                     vpSubtree.addChild(index, singularFormSubtree);
-                    if (GlobalProperties.getDebug())
+                    if (GlobalProperties.getDebug()) {
                         System.err.println("ensureVerbAgreementForSubjectWH: " + inputTree.toString());
+                    }
                 }
             }
         }
@@ -977,11 +1018,11 @@ public class QuestionTransducer {
      * @param inputTree
      * @return
      */
-    private Tree markPossibleAnswerPhrases(Tree inputTree) {
-        Tree copyTree = inputTree.deeperCopy();
+    private Tree markPossibleAnswerPhrases(final Tree inputTree) {
+        final Tree copyTree = inputTree.deeperCopy();
         numWHPhrases = 0;
 
-        List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
+        final List<TsurgeonPattern> ps = new ArrayList<TsurgeonPattern>();
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -1008,8 +1049,9 @@ public class QuestionTransducer {
             numWHPhrases++;
         }
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("markPossibleAnswerPhrases: " + copyTree.toString());
+        }
         return copyTree;
     }
 
@@ -1024,7 +1066,7 @@ public class QuestionTransducer {
      * @param inputTree
      * @return
      */
-    private boolean canInvert(Tree inputTree) {
+    private boolean canInvert(final Tree inputTree) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -1041,7 +1083,7 @@ public class QuestionTransducer {
      * @param inputTree
      * @return
      */
-    private boolean isUsableInputSentence(Tree inputTree) {
+    private boolean isUsableInputSentence(final Tree inputTree) {
         boolean res = false;
 
         String tregexOpStr;
@@ -1073,11 +1115,11 @@ public class QuestionTransducer {
         return res;
     }
 
-    protected void setPrintExtractedPhrases(boolean b) {
+    protected void setPrintExtractedPhrases(final boolean b) {
         printExtractedPhrases = b;
     }
 
-    public void setAvoidPronounsAndDemonstratives(boolean b) {
+    public void setAvoidPronounsAndDemonstratives(final boolean b) {
         avoidPronounsAndDemonstratives = b;
     }
 
@@ -1089,8 +1131,8 @@ public class QuestionTransducer {
         return questions;
     }
 
-    public void setNoAnswerPhraseMarking(boolean b) {
-        this.noAnswerPhraseMarking = b;
+    public void setNoAnswerPhraseMarking(final boolean b) {
+        noAnswerPhraseMarking = b;
     }
 
     public boolean getNoAnswerPhraseMarking() {
@@ -1104,9 +1146,8 @@ public class QuestionTransducer {
      * 
      * @param args
      */
-    public static void main(String[] args) {
-        QuestionTransducer qt = new QuestionTransducer();
-        AnalysisUtilities.getInstance();
+    public static void main(final String[] args) {
+        final QuestionTransducer qt = new QuestionTransducer();
 
         String buf;
         Tree inputTree;
@@ -1114,7 +1155,7 @@ public class QuestionTransducer {
         boolean printOriginal = false;
         boolean treeInput = false;
         boolean printFeatures = false;
-        Set<Question> inputTrees = new HashSet<Question>();
+        final Set<Question> inputTrees = new HashSet<Question>();
         qt.setAvoidPronounsAndDemonstratives(true);
 
         for (int i = 0; i < args.length; i++) {
@@ -1138,80 +1179,86 @@ public class QuestionTransducer {
         }
 
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
             // take input from the user on stdin
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("\nInput Declarative Sentence:");
+            }
             while ((buf = br.readLine()) != null) {
                 if (treeInput) {
                     buf = AnalysisUtilities.preprocessTreeString(buf);
-                    inputTree = AnalysisUtilities.getInstance().readTreeFromString(buf);
-                    AnalysisUtilities.getInstance().normalizeTree(inputTree);
+                    inputTree = AnalysisUtilities.readTreeFromString(buf);
+                    AnalysisUtilities.normalizeTree(inputTree);
                 } else {
                     if (AnalysisUtilities.filterOutSentenceByPunctuation(buf)) {
                         continue;
                     }
                     buf = AnalysisUtilities.preprocess(buf);
-                    if (printOriginal)
+                    if (printOriginal) {
                         System.out.println("\n" + buf);
-                    ParseResult parseRes = AnalysisUtilities.getInstance().parseSentence(buf);
-                    inputTree = parseRes.parse;
-                    if (GlobalProperties.getDebug())
-                        System.err.println("Parse Score: " + parseRes.score);
+                    }
+                    final ParseResult parseRes = AnalysisUtilities.parseSentence(buf);
+                    inputTree = parseRes.getTree();
+                    if (GlobalProperties.getDebug()) {
+                        System.err.println("Parse Score: " + parseRes.getScore());
+                    }
                 }
 
-                if (printParse)
+                if (printParse) {
                     System.out.println(inputTree);
+                }
 
                 inputTrees.clear();
-                Question tmp = new Question();
+                final Question tmp = new Question();
                 tmp.setIntermediateTree(inputTree.deeperCopy());
                 tmp.setSourceTree(inputTree);
                 inputTrees.add(tmp);
 
                 // iterate over the trees given by the input
                 List<Question> questions;
-                for (Question q : inputTrees) {
+                for (final Question q : inputTrees) {
                     try {
                         qt.generateQuestionsFromParse(q);
                         questions = qt.getQuestions();
                         QuestionTransducer.removeDuplicateQuestions(questions);
 
                         // iterate over the questions for each tree
-                        for (Question curQuestion : questions) {
+                        for (final Question curQuestion : questions) {
                             System.out.print(curQuestion.yield());
                             if (printFeatures) {
                                 System.out.print("\t");
                                 int cnt = 0;
-                                for (Double val : curQuestion.featureValueList()) {
-                                    if (cnt > 0)
+                                for (final Double val : curQuestion.featureValueList()) {
+                                    if (cnt > 0) {
                                         System.out.print(";");
+                                    }
                                     System.out.print(NumberFormat.getInstance().format(val));
                                     cnt++;
                                 }
                             }
                             System.out.println();
                         }
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         e.printStackTrace();
                     }
                 }
 
-                if (GlobalProperties.getDebug())
+                if (GlobalProperties.getDebug()) {
                     System.err.println("\nInput Declarative Sentence:");
+                }
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             e.printStackTrace();
         }
     }
 
-    int                       numWHPhrases;                  // the number of possible answer phrases identified in the source sentence.
+    int                             numWHPhrases;                  // the number of possible answer phrases identified in the source sentence.
 
-    private boolean           avoidPronounsAndDemonstratives; // don't produce questions with pronouns
-    private List<Question>    questions;                     // output questions, co-indexed with sourceTrees and featureValueLists
+    private boolean                 avoidPronounsAndDemonstratives; // don't produce questions with pronouns
+    private List<Question>          questions;                     // output questions, co-indexed with sourceTrees and featureValueLists
 
-    private WhPhraseGenerator whGen;
-    private boolean           printExtractedPhrases;         // whether or not to print out answer phrases
-    private boolean           noAnswerPhraseMarking = false;
+    private final WhPhraseGenerator whGen;
+    private boolean                 printExtractedPhrases;         // whether or not to print out answer phrases
+    private boolean                 noAnswerPhraseMarking = false;
 }

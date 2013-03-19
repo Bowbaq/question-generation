@@ -1,10 +1,16 @@
 package edu.cmu.ark;
 
-import edu.stanford.nlp.trees.*;
-import edu.stanford.nlp.trees.tregex.*;
-import edu.stanford.nlp.trees.tregex.tsurgeon.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.trees.tregex.TregexMatcher;
+import edu.stanford.nlp.trees.tregex.TregexPattern;
+import edu.stanford.nlp.trees.tregex.tsurgeon.Tsurgeon;
+import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
-import java.util.*;
 
 /**
  * Class for generating WH phrases (e.g., which dog) from noun
@@ -27,13 +33,13 @@ public class WhPhraseGenerator {
         partitiveConstructionHeads = new HashSet<String>();
 
         tokens = GlobalProperties.getProperties().getProperty("peoplePronouns", "i|he|her|him|me|she|us|we|you|myself|yourself|ourselves").split("\\|");
-        for (int i = 0; i < tokens.length; i++) {
-            peoplePronouns.add(tokens[i]);
+        for (final String token : tokens) {
+            peoplePronouns.add(token);
         }
 
         tokens = GlobalProperties.getProperties().getProperty("partitiveConstructionHeads", "part|more|all|none|rest|much|most|some|one|many|any|either|%|percent|portion|half|third|quarter|fraction|quarter|best|worst|member|bulk|majority|minority").split("\\|");
-        for (int i = 0; i < tokens.length; i++) {
-            partitiveConstructionHeads.add(tokens[i]);
+        for (final String token : tokens) {
+            partitiveConstructionHeads.add(token);
         }
 
     }
@@ -45,14 +51,14 @@ public class WhPhraseGenerator {
      * It uses a (probably not comprehensive) list of words that can be used
      * as the syntactic heads of partitive constructions (e.g., one, many, some).
      */
-    protected Tree partitiveConstructionSemanticHead(Tree np) {
+    protected Tree partitiveConstructionSemanticHead(final Tree np) {
         TregexPattern matchPattern;
         TregexMatcher matcher;
-        String tregexOpStr = "NP <<# DT|JJ|CD|RB|NN|JJS|JJR=syntactichead < (PP < (IN < of) < (NP <<# NN|NNS|NNP|NNPS=semantichead)) !> NP ";
+        final String tregexOpStr = "NP <<# DT|JJ|CD|RB|NN|JJS|JJR=syntactichead < (PP < (IN < of) < (NP <<# NN|NNS|NNP|NNPS=semantichead)) !> NP ";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(np);
         if (matcher.find()) {
-            Tree syntacticHead = matcher.getNode("syntactichead");
+            final Tree syntacticHead = matcher.getNode("syntactichead");
             if (partitiveConstructionHeads.contains(syntacticHead.getChild(0).label().value().toLowerCase())
                     || syntacticHead.label().value().equals("CD"))
             {
@@ -63,7 +69,7 @@ public class WhPhraseGenerator {
         return null;
     }
 
-    public void setCurrentQuestion(Question tmp1) {
+    public void setCurrentQuestion(final Question tmp1) {
         supersenseTags = tmp1.getIntermediateTreeSupersenses();
         if (supersenseTags == null) {
             supersenseTags = SuperSenseWrapper.getInstance().annotateSentenceWithSupersenses(tmp1.getIntermediateTree());
@@ -71,9 +77,9 @@ public class WhPhraseGenerator {
         }
 
         sentenceTokens = new ArrayList<String>();
-        String[] origTokenArray = tmp1.getIntermediateTree().yield().toString().split("\\s");
-        for (int i = 0; i < origTokenArray.length; i++) {
-            sentenceTokens.add(origTokenArray[i]);
+        final String[] origTokenArray = tmp1.getIntermediateTree().yield().toString().split("\\s");
+        for (final String element : origTokenArray) {
+            sentenceTokens.add(element);
         }
     }
 
@@ -86,11 +92,12 @@ public class WhPhraseGenerator {
      * (e.g., "friends" for "one of my friends"), which
      * is used to choose appropriate WH words.
      */
-    public void setAnswer(Tree ans, String origSentence) {
+    public void setAnswer(final Tree ans, final String origSentence) {
         answerTree = ans;
-        if (answerTree == null)
+        if (answerTree == null) {
             return;
-        String[] answerTokenArray = answerTree.yield().toString().split("\\s");
+        }
+        final String[] answerTokenArray = answerTree.yield().toString().split("\\s");
 
         // find out the start and end indexes of the answer phrase in the original sentence
         // note: this fails, perhaps gracefully enough, if the same string of tokens appears twice in the sentence -- MJH
@@ -116,13 +123,13 @@ public class WhPhraseGenerator {
         try {
             TregexPattern matchPattern;
             TregexMatcher matcher;
-            String tregexOpStr = "PP !>> NP ?< RB|ADVP=adverb [< (IN|TO=preposition !$ IN) | < (IN=preposition $ IN=preposition2)] < NP=object";
+            final String tregexOpStr = "PP !>> NP ?< RB|ADVP=adverb [< (IN|TO=preposition !$ IN) | < (IN=preposition $ IN=preposition2)] < NP=object";
             matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
             matcher = matchPattern.matcher(ans);
             if (matcher.find()) {
                 answerNP = matcher.getNode("object");
                 answerPreposition = matcher.getNode("preposition").yield().toString();
-                Tree answerPreposition2 = matcher.getNode("preposition2");
+                final Tree answerPreposition2 = matcher.getNode("preposition2");
                 if (answerPreposition2 != null) {
                     answerPreposition += " " + answerPreposition2.yield().toString();
                 }
@@ -131,7 +138,7 @@ public class WhPhraseGenerator {
                 // check if this is a partitive construction
                 // e.g., for "one of my friends", the system should create
                 // "who" from "friends" rather than "what" from the syntactic head "one"
-                Tree semanticHead = partitiveConstructionSemanticHead(ans);
+                final Tree semanticHead = partitiveConstructionSemanticHead(ans);
                 if (semanticHead != null) {
                     answerNP = semanticHead;
                 } else {
@@ -141,20 +148,20 @@ public class WhPhraseGenerator {
                 answerPreposition = "";
                 answerPrepositionModifier = null;
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
             answerPreposition = "";
             answerPrepositionModifier = null;
         }
 
-        List<Tree> leaves = answerTree.getLeaves();
+        final List<Tree> leaves = answerTree.getLeaves();
 
-        answerNPHeadTokenIdx = start + leaves.indexOf(answerNP.headTerminal(AnalysisUtilities.getInstance().getHeadFinder()));
+        answerNPHeadTokenIdx = start + leaves.indexOf(answerNP.headTerminal(AnalysisUtilities.getHeadFinder()));
         headSupersenseTag = supersenseTags.get(answerNPHeadTokenIdx);
         headWord = sentenceTokens.get(answerNPHeadTokenIdx);
     }
 
-    protected void addIfAllowedWhat(Tree phraseToMove) {
+    protected void addIfAllowedWhat(final Tree phraseToMove) {
         if (isPerson(headWord, headSupersenseTag) || isTime(headWord, headSupersenseTag)) {
             return;
         }
@@ -172,7 +179,7 @@ public class WhPhraseGenerator {
      * @param phraseToMove
      * @return
      */
-    protected boolean isDefinite(Tree phraseToMove) {
+    protected boolean isDefinite(final Tree phraseToMove) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -197,7 +204,7 @@ public class WhPhraseGenerator {
         return false;
     }
 
-    protected void addIfAllowedWho(Tree phraseToMove) {
+    protected void addIfAllowedWho(final Tree phraseToMove) {
         if (isPerson(headWord, headSupersenseTag)
                 // || isGroup(headWord, headSupersenseTag)
                 || headWord.toLowerCase().matches("^(they|them|themselves)$")) // might be a person (these aren't included in isPerson)
@@ -206,20 +213,20 @@ public class WhPhraseGenerator {
         }
     }
 
-    protected void addIfAllowedWhen(Tree phraseToMove) {
+    protected void addIfAllowedWhen(final Tree phraseToMove) {
         if (isTime(headWord, headSupersenseTag)) {// && !answerPreposition.matches("on|in|at|over")){ // don't want "in when"
             whPhraseSubtrees.add("(WHADVP (WRB when))");
         }
     }
 
-    protected void addIfAllowedWhere(Tree phraseToMove) {
+    protected void addIfAllowedWhere(final Tree phraseToMove) {
         // if(locationPrepositions.contains(answerPreposition) && isLocation()){
         if (answerPreposition.length() > 0 && answerPreposition.matches("on|in|at|over|to") && isLocation(headWord, headSupersenseTag)) {
             whPhraseSubtrees.add("(WHADVP (WRB where))");
         }
     }
 
-    protected void addIfAllowedHowMany(Tree phraseToMove) {
+    protected void addIfAllowedHowMany(final Tree phraseToMove) {
         String tregexOpStr;
         TregexPattern matchPattern;
         TregexMatcher matcher;
@@ -231,7 +238,7 @@ public class WhPhraseGenerator {
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
         matcher = matchPattern.matcher(phraseToMove);
 
-        boolean hasQuantifier = matcher.find();
+        final boolean hasQuantifier = matcher.find();
 
         if (hasQuantifier) {
             List<Pair<TregexPattern, TsurgeonPattern>> ops;
@@ -266,7 +273,7 @@ public class WhPhraseGenerator {
         }
     }
 
-    protected void addIfAllowedWhose(Tree phraseToMove) {
+    protected void addIfAllowedWhose(final Tree phraseToMove) {
         try {
             String tregexOpStr;
             TregexPattern matchPattern;
@@ -288,13 +295,16 @@ public class WhPhraseGenerator {
                 ps = new ArrayList<TsurgeonPattern>();
                 ops = new ArrayList<Pair<TregexPattern, TsurgeonPattern>>();
 
-                String possessorToken = matcher.getNode("possessor").getChild(0).label().toString();
-                int possIndex = sentenceTokens.indexOf(possessorToken);
-                if (possIndex == -1)
+                final String possessorToken = matcher.getNode("possessor").getChild(0).label().toString();
+                final int possIndex = sentenceTokens.indexOf(possessorToken);
+                if (possIndex == -1) {
                     return;
-                String sst = supersenseTags.get(possIndex);
+                }
+                final String sst = supersenseTags.get(possIndex);
                 if (!isPerson(possessorToken, sst))
+                {
                     return;// && !isGroup(possessorToken, sst)) return;
+                }
 
                 // make a copy and use that
                 copyTree = matcher.getNode("np").deeperCopy();
@@ -308,7 +318,7 @@ public class WhPhraseGenerator {
 
                 whPhraseSubtrees.add("(WHNP (WP$ whose) " + copyTree.toString() + ")");
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
     }
@@ -320,15 +330,16 @@ public class WhPhraseGenerator {
      * place in the output questions, are stored in lists that are fields of this class
      * and then later accessed by the question transducer class.
      */
-    public void generateWHPhraseSubtrees(Tree phraseToMove, String inputTreeYield) {
+    public void generateWHPhraseSubtrees(final Tree phraseToMove, final String inputTreeYield) {
         // clear the lists that store the possible question phrases created by this method
         leftOverPrepositions.clear();
         whPhraseSubtrees.clear();
 
         setAnswer(phraseToMove, inputTreeYield);
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.getDebug()) {
             System.err.println("getWHPhraseSubtrees: phraseToMove: " + phraseToMove.toString());
+        }
 
         // identify what question types to create from this answer phrase
         addIfAllowedWhat(phraseToMove);
@@ -341,7 +352,7 @@ public class WhPhraseGenerator {
         // construct the final WH phrases depending on whether the answer was a NP or PP
         String phrase;
         String prepositionModifierStr;
-        int length = whPhraseSubtrees.size();
+        final int length = whPhraseSubtrees.size();
         for (int i = 0; i < length; i++) {
             phrase = whPhraseSubtrees.get(i);
             prepositionModifierStr = "";
@@ -369,39 +380,45 @@ public class WhPhraseGenerator {
         }
     }
 
-    protected boolean isTime(String word, String sst) {
-        if (sst.endsWith("noun.time"))
+    protected boolean isTime(final String word, final String sst) {
+        if (sst.endsWith("noun.time")) {
             return true;
+        }
 
         // special case for years 1000-present (which are fairly common)
-        if (word.matches("[1|2]\\d\\d\\d"))
+        if (word.matches("[1|2]\\d\\d\\d")) {
             return true;
+        }
 
         return false;
     }
 
-    protected boolean isLocation(String word, String sst) {
-        if (sst.endsWith("noun.location"))
+    protected boolean isLocation(final String word, final String sst) {
+        if (sst.endsWith("noun.location")) {
             return true;
+        }
         return false;
     }
 
-    protected boolean isGroup(String word, String sst) {
-        if (sst.endsWith("noun.group"))
+    protected boolean isGroup(final String word, final String sst) {
+        if (sst.endsWith("noun.group")) {
             return true;
+        }
         return false;
     }
 
-    protected boolean isPerson(String word, String sst) {
-        if (peoplePronouns.contains(word.toLowerCase()))
+    protected boolean isPerson(final String word, final String sst) {
+        if (peoplePronouns.contains(word.toLowerCase())) {
             return true;
-        if (sst.endsWith("noun.person"))
+        }
+        if (sst.endsWith("noun.person")) {
             return true;
+        }
         return false;
     }
 
     public boolean isFirstTokenNamedEntity() {
-        String firstLabel = supersenseTags.get(0);
+        final String firstLabel = supersenseTags.get(0);
         if (firstLabel.equals("O")) {
             return false;
         } else {
@@ -417,18 +434,18 @@ public class WhPhraseGenerator {
         return whPhraseSubtrees;
     }
 
-    private Tree         answerTree;                // current answer tree that is being processed
-    private List<String> supersenseTags;            // supersense tags for the sentence that is being processed
-    private List<String> sentenceTokens;
-    private int          answerNPHeadTokenIdx;
-    private String       headWord;
-    private String       headSupersenseTag;
-    private String       answerPreposition;
-    private Tree         answerPrepositionModifier;
-    private Set<String>  peoplePronouns;            // list of personal pronouns to consider as PERSON entities
-    private List<String> leftOverPrepositions;
-    private List<String> whPhraseSubtrees;
-    private Set<String>  partitiveConstructionHeads; // words that can be the syntactic heads of partitive constructions (e.g., ONE of the most
-                                                     // prolific quarterbacks of all time)
+    private Tree               answerTree;                // current answer tree that is being processed
+    private List<String>       supersenseTags;            // supersense tags for the sentence that is being processed
+    private List<String>       sentenceTokens;
+    private int                answerNPHeadTokenIdx;
+    private String             headWord;
+    private String             headSupersenseTag;
+    private String             answerPreposition;
+    private Tree               answerPrepositionModifier;
+    private final Set<String>  peoplePronouns;            // list of personal pronouns to consider as PERSON entities
+    private final List<String> leftOverPrepositions;
+    private final List<String> whPhraseSubtrees;
+    private final Set<String>  partitiveConstructionHeads; // words that can be the syntactic heads of partitive constructions (e.g., ONE of the most
+    // prolific quarterbacks of all time)
 
 }

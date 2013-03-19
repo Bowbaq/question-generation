@@ -65,7 +65,7 @@ public class TestNPClarification extends TestCase {
 
         for (int i = 0; i < sents.size(); i++) {
             String s = sents.get(i);
-            Tree t = AnalysisUtilities.getInstance().parseSentence(s).parse;
+            Tree t = AnalysisUtilities.load().parseSentence(s).parse;
             res.add(t);
         }
 

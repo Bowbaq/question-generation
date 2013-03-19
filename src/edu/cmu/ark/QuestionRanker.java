@@ -1,11 +1,28 @@
 package edu.cmu.ark;
 
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.io.*;
 
-import edu.cmu.ark.ranking.*;
+import edu.cmu.ark.ranking.IRanker;
+import edu.cmu.ark.ranking.Rankable;
+import edu.cmu.ark.ranking.RankerFactory;
+import edu.cmu.ark.ranking.RankingEval;
+import edu.cmu.ark.ranking.RankingUtils;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.tregex.TregexMatcher;
 import edu.stanford.nlp.trees.tregex.TregexPattern;
@@ -24,7 +41,7 @@ public class QuestionRanker implements Serializable {
     private static final long serialVersionUID          = 15632527517313745L;
     private double            minimumAcceptability      = 3.5;
 
-    public QuestionRanker(String rankerType) {
+    public QuestionRanker(final String rankerType) {
         ranker = RankerFactory.createRanker(rankerType);
     }
 
@@ -32,42 +49,42 @@ public class QuestionRanker implements Serializable {
         ranker = null;
     }
 
-    public Set<String> getArticleIDList(List<Question> questions) {
-        Set<String> res = new HashSet<String>();
+    public Set<String> getArticleIDList(final List<Question> questions) {
+        final Set<String> res = new HashSet<String>();
 
-        for (Question q : questions) {
+        for (final Question q : questions) {
             res.add(q.getSourceArticleName());
         }
 
         return res;
     }
 
-    public void saveModel(String modelPath) {
+    public void saveModel(final String modelPath) {
         try {
 
-            ObjectOutputStream out = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(modelPath)));
+            final ObjectOutputStream out = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(modelPath)));
             out.writeObject(ranker);
             out.flush();
             out.close();
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void loadModel(String modelPath) {
+    public void loadModel(final String modelPath) {
         try {
-            ObjectInputStream in = new ObjectInputStream(new GZIPInputStream(new FileInputStream(modelPath)));
+            final ObjectInputStream in = new ObjectInputStream(new GZIPInputStream(new FileInputStream(modelPath)));
             ranker = (IRanker) in.readObject();
 
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
     }
 
     public static Comparator<Question> questionComparatorWithSentenceOrdering = new Comparator<Question>() {
 
-                                                                                  public int compare(Question q1, Question q2) {
+                                                                                  public int compare(final Question q1, final Question q2) {
                                                                                       int comparison = 0;
                                                                                       Integer sentnum1, sentnum2;
                                                                                       Double score1, score2;
@@ -89,9 +106,9 @@ public class QuestionRanker implements Serializable {
     /**
      * Generates predictions for the data in featureLists.
      */
-    public void rank(List<Question> questions) {
-        List<Rankable> unranked = new ArrayList<Rankable>();
-        for (Question q : questions) {
+    public void rank(final List<Question> questions) {
+        final List<Rankable> unranked = new ArrayList<Rankable>();
+        for (final Question q : questions) {
             unranked.add(createRankableFromQuestion(q));
         }
         ranker.rank(unranked);
@@ -102,12 +119,12 @@ public class QuestionRanker implements Serializable {
      * 
      * @param givenQuestions
      */
-    public void scoreGivenQuestions(List<Question> questions) {
-        List<List<Rankable>> lists = createQuestionLists(questions);
+    public void scoreGivenQuestions(final List<Question> questions) {
+        final List<List<Rankable>> lists = createQuestionLists(questions);
         ranker.rankAll(lists);
 
-        for (List<Rankable> list : lists) {
-            for (Rankable r : list) {
+        for (final List<Rankable> list : lists) {
+            for (final Rankable r : list) {
                 ((Question) r.pointer1).setScore(r.score);
             }
         }
@@ -124,8 +141,8 @@ public class QuestionRanker implements Serializable {
      * -the next column corresponds to the label
      * -the rest of the columns are feature values
      */
-    public List<Question> loadQuestionDataWithFeatures(BufferedReader br) {
-        List<Question> questions = new ArrayList<Question>();
+    public List<Question> loadQuestionDataWithFeatures(final BufferedReader br) {
+        final List<Question> questions = new ArrayList<Question>();
         Question question;
         String[] parts;
         String buf;
@@ -143,7 +160,7 @@ public class QuestionRanker implements Serializable {
                 yield = new String(parts[0]);
 
                 i = 2;
-                Double tmpLabelScore = new Double(parts[i]);
+                final Double tmpLabelScore = new Double(parts[i]);
                 i++;
 
                 for (; i < parts.length; i++) {
@@ -152,7 +169,7 @@ public class QuestionRanker implements Serializable {
                 }
 
                 // add to list
-                Tree tmptree = AnalysisUtilities.getInstance().readTreeFromString("(ROOT (. .))");
+                final Tree tmptree = AnalysisUtilities.readTreeFromString("(ROOT (. .))");
                 question = new Question(tmptree);
                 question.setYield(yield);
                 question.setLabelScore(tmpLabelScore);
@@ -160,15 +177,15 @@ public class QuestionRanker implements Serializable {
                 question.setSourceArticleName(articleID);
                 questions.add(question);
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             e.printStackTrace();
         }
 
         return questions;
     }
 
-    public List<Question> loadQuestionDataWithTrees(BufferedReader br) {
-        List<Question> questions = new ArrayList<Question>();
+    public List<Question> loadQuestionDataWithTrees(final BufferedReader br) {
+        final List<Question> questions = new ArrayList<Question>();
         Question question;
         String[] parts;
         String buf;
@@ -179,13 +196,13 @@ public class QuestionRanker implements Serializable {
             while ((buf = br.readLine()) != null) {
                 parts = buf.split("\\t");
 
-                Double tmpLabelScore = new Double(parts[0]);
+                final Double tmpLabelScore = new Double(parts[0]);
 
-                Tree questionTree = AnalysisUtilities.getInstance().readTreeFromString(parts[2]);
-                Tree answerPhraseTree = AnalysisUtilities.getInstance().readTreeFromString(parts[4]);
-                Tree intermediateTree = AnalysisUtilities.getInstance().readTreeFromString(parts[6]);
-                Tree sourceTree = AnalysisUtilities.getInstance().readTreeFromString(parts[8]);
-                String articleID = parts[9];
+                final Tree questionTree = AnalysisUtilities.readTreeFromString(parts[2]);
+                final Tree answerPhraseTree = AnalysisUtilities.readTreeFromString(parts[4]);
+                final Tree intermediateTree = AnalysisUtilities.readTreeFromString(parts[6]);
+                final Tree sourceTree = AnalysisUtilities.readTreeFromString(parts[8]);
+                final String articleID = parts[9];
 
                 question = new Question();
                 question.setLabelScore(tmpLabelScore);
@@ -197,64 +214,79 @@ public class QuestionRanker implements Serializable {
                 question.setSourceTree(sourceTree);
                 question.setSourceArticleName(articleID);
 
-                double removedAppositives = new Double(parts[12]);
-                double removedParentheticals = new Double(parts[13]);
-                double removedLeadModifyingPhrases = new Double(parts[14]);
-                double removedVerbalModifiersAfterCommas = new Double(parts[15]);
+                final double removedAppositives = new Double(parts[12]);
+                final double removedParentheticals = new Double(parts[13]);
+                final double removedLeadModifyingPhrases = new Double(parts[14]);
+                final double removedVerbalModifiersAfterCommas = new Double(parts[15]);
                 if (removedAppositives > 0 || removedParentheticals > 0 || removedLeadModifyingPhrases > 0 || removedVerbalModifiersAfterCommas > 0) {
-                    if (Question.getFeatureNames().contains("removedNestedElements"))
+                    if (Question.getFeatureNames().contains("removedNestedElements")) {
                         question.setFeatureValue("removedNestedElements", new Double(parts[10]));
+                    }
                 }
 
-                if (Question.getFeatureNames().contains("isSubjectMovement"))
+                if (Question.getFeatureNames().contains("isSubjectMovement")) {
                     question.setFeatureValue("isSubjectMovement", new Double(parts[10]));
-                if (Question.getFeatureNames().contains("whQuestion"))
+                }
+                if (Question.getFeatureNames().contains("whQuestion")) {
                     question.setFeatureValue("whQuestion", new Double(parts[11]));
-                if (Question.getFeatureNames().contains("removedAppositives"))
+                }
+                if (Question.getFeatureNames().contains("removedAppositives")) {
                     question.setFeatureValue("removedAppositives", removedAppositives);
-                if (Question.getFeatureNames().contains("removedParentheticals"))
+                }
+                if (Question.getFeatureNames().contains("removedParentheticals")) {
                     question.setFeatureValue("removedParentheticals", removedParentheticals);
-                if (Question.getFeatureNames().contains("removedLeadModifyingPhrases"))
+                }
+                if (Question.getFeatureNames().contains("removedLeadModifyingPhrases")) {
                     question.setFeatureValue("removedLeadModifyingPhrases", removedLeadModifyingPhrases);
-                if (Question.getFeatureNames().contains("removedVerbalModifiersAfterCommas"))
+                }
+                if (Question.getFeatureNames().contains("removedVerbalModifiersAfterCommas")) {
                     question.setFeatureValue("removedVerbalModifiersAfterCommas", removedVerbalModifiersAfterCommas);
-                if (Question.getFeatureNames().contains("extractedFromConjoinedPhrases"))
+                }
+                if (Question.getFeatureNames().contains("extractedFromConjoinedPhrases")) {
                     question.setFeatureValue("extractedFromConjoinedPhrases", new Double(parts[16]));
-                if (Question.getFeatureNames().contains("extractedFromFiniteClause"))
+                }
+                if (Question.getFeatureNames().contains("extractedFromFiniteClause")) {
                     question.setFeatureValue("extractedFromFiniteClause", new Double(parts[17]));
-                if (Question.getFeatureNames().contains("extractedFromAppositive"))
+                }
+                if (Question.getFeatureNames().contains("extractedFromAppositive")) {
                     question.setFeatureValue("extractedFromAppositive", new Double(parts[18]));
-                if (Question.getFeatureNames().contains("extractedFromRelativeClause"))
+                }
+                if (Question.getFeatureNames().contains("extractedFromRelativeClause")) {
                     question.setFeatureValue("extractedFromRelativeClause", new Double(parts[19]));
-                if (Question.getFeatureNames().contains("extractByMovingLeadingModifiers"))
+                }
+                if (Question.getFeatureNames().contains("extractByMovingLeadingModifiers")) {
                     question.setFeatureValue("extractByMovingLeadingModifiers", new Double(parts[20]));
-                if (Question.getFeatureNames().contains("extractedFromParticipial"))
+                }
+                if (Question.getFeatureNames().contains("extractedFromParticipial")) {
                     question.setFeatureValue("extractedFromParticipial", new Double(parts[21]));
-                if (Question.getFeatureNames().contains("performedNPClarification"))
+                }
+                if (Question.getFeatureNames().contains("performedNPClarification")) {
                     question.setFeatureValue("performedNPClarification", new Double(parts[22]));
+                }
 
                 QuestionFeatureExtractor.getInstance().extractFinalFeatures(question);
                 questions.add(question);
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             e.printStackTrace();
         }
 
         return questions;
     }
 
-    public List<Question> findQuestionsAtOrAboveThreshold(List<Question> input, double threshold) {
-        List<Question> res = new ArrayList<Question>();
+    public List<Question> findQuestionsAtOrAboveThreshold(final List<Question> input, final double threshold) {
+        final List<Question> res = new ArrayList<Question>();
 
-        for (Question q : input) {
-            if (q.getScore() >= threshold)
+        for (final Question q : input) {
+            if (q.getScore() >= threshold) {
                 res.add(q);
+            }
         }
 
         return res;
     }
 
-    private void test(List<List<Rankable>> list) {
+    private void test(final List<List<Rankable>> list) {
         ranker.rankAll(list);
         System.out.println(RankingEval.precisionAtN(list, 10, minimumAcceptability) + "\t"
                 + RankingEval.precisionAtN(list, 4, minimumAcceptability) + "\t"
@@ -264,9 +296,9 @@ public class QuestionRanker implements Serializable {
 
     }
 
-    private void leaveOneOutCrossValidate(List<List<Rankable>> lists) {
-        List<List<Rankable>> trainingFolds = new ArrayList<List<Rankable>>();
-        List<List<Rankable>> testingFold = new ArrayList<List<Rankable>>();
+    private void leaveOneOutCrossValidate(final List<List<Rankable>> lists) {
+        final List<List<Rankable>> trainingFolds = new ArrayList<List<Rankable>>();
+        final List<List<Rankable>> testingFold = new ArrayList<List<Rankable>>();
         for (int i = 0; i < lists.size(); i++) {
             trainingFolds.clear();
             trainingFolds.addAll(lists);
@@ -285,18 +317,18 @@ public class QuestionRanker implements Serializable {
         }
     }
 
-    public void setMinimumAcceptability(double minimumAcceptability) {
+    public void setMinimumAcceptability(final double minimumAcceptability) {
         this.minimumAcceptability = minimumAcceptability;
     }
 
-    private List<List<Rankable>> createQuestionLists(List<Question> questions) {
-        List<List<Rankable>> res = new ArrayList<List<Rankable>>();
+    private List<List<Rankable>> createQuestionLists(final List<Question> questions) {
+        final List<List<Rankable>> res = new ArrayList<List<Rankable>>();
 
-        for (String articleID : getArticleIDList(questions)) {
-            List<Rankable> list = new ArrayList<Rankable>();
-            for (Question q : questions) {
+        for (final String articleID : getArticleIDList(questions)) {
+            final List<Rankable> list = new ArrayList<Rankable>();
+            for (final Question q : questions) {
                 if (q.getSourceArticleName().equals(articleID)) {
-                    Rankable r = createRankableFromQuestion(q);
+                    final Rankable r = createRankableFromQuestion(q);
                     list.add(r);
                 }
             }
@@ -305,8 +337,8 @@ public class QuestionRanker implements Serializable {
         return res;
     }
 
-    private Rankable createRankableFromQuestion(Question q) {
-        Rankable r = new Rankable();
+    private Rankable createRankableFromQuestion(final Question q) {
+        final Rankable r = new Rankable();
         r.label = q.getLabelScore();
         r.features = RankingUtils.convertToArray(q.featureValueList());
         r.pointer1 = q;
@@ -317,39 +349,43 @@ public class QuestionRanker implements Serializable {
         return ranker;
     }
 
-    public static void adjustScores(List<Question> questions, List<Tree> parsedSentences, boolean avoidFreqWords,
-            boolean preferWH, boolean downweightPronouns, boolean doStemming)
+    public static void adjustScores(final List<Question> questions, final List<Tree> parsedSentences, final boolean avoidFreqWords,
+            final boolean preferWH, final boolean downweightPronouns, final boolean doStemming)
     {
 
         if (avoidFreqWords) {
-            List<String> wordTokens = BagOfWordsExtractor.getInstance().extractNounTokensFromTrees(parsedSentences);
-            Map<String, Double> typeCounts = BagOfWordsExtractor.getInstance().extractCounts(wordTokens);
+            final List<String> wordTokens = BagOfWordsExtractor.getInstance().extractNounTokensFromTrees(parsedSentences);
+            final Map<String, Double> typeCounts = BagOfWordsExtractor.getInstance().extractCounts(wordTokens);
 
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.getDebug()) {
                 System.err.println("Frequent Words: " + findFrequentWords(typeCounts, wordTokens.size()).toString());
+            }
 
             // downweight any questions whose answer's syntactic head word (or for PPs, the pp-object's head)
             // appears at least 5 times
             // and constitutes at least 5% of the non-stopword nouns in the text
-            double threshold = Math.max(minCountForFreqWords, minProportionForFreqWords * wordTokens.size());
-            for (Question q : questions) {
-                Tree answerTree = q.getAnswerPhraseTree();
-                if (answerTree == null)
+            final double threshold = Math.max(minCountForFreqWords, minProportionForFreqWords * wordTokens.size());
+            for (final Question q : questions) {
+                final Tree answerTree = q.getAnswerPhraseTree();
+                if (answerTree == null) {
                     continue;
+                }
                 String headWord = extractHeadNounToken(answerTree).toLowerCase();
-                if (doStemming)
+                if (doStemming) {
                     headWord = PorterStemmer.getInstance().stem(headWord);
+                }
                 if (typeCounts.containsKey(headWord) && typeCounts.get(headWord) >= threshold) {
                     q.setScore(q.getScore() - 1.0);
                     q.setFeatureValue("answerIsFrequentWord", 1.0);
-                    if (GlobalProperties.getDebug())
+                    if (GlobalProperties.getDebug()) {
                         System.err.println("Question Ranker: downweighting due to frequent word (" + headWord + ") in answer: " + q.yield());
+                    }
                 }
             }
         }
 
         if (preferWH) {
-            for (Question q : questions) {
+            for (final Question q : questions) {
                 if (q.getFeatureValue("whQuestion") == 0.0) {
                     q.setScore(q.getScore() - 1.0);
                 }
@@ -357,17 +393,19 @@ public class QuestionRanker implements Serializable {
         }
 
         if (downweightPronouns) {
-            for (Question q : questions) {
-                Tree answerTree = q.getAnswerPhraseTree();
+            for (final Question q : questions) {
+                final Tree answerTree = q.getAnswerPhraseTree();
                 if (QuestionTransducer.containsUnresolvedPronounsOrDemonstratives(q)) {
-                    if (GlobalProperties.getDebug())
+                    if (GlobalProperties.getDebug()) {
                         System.err.println("Question Ranker: downweighting due to pronoun in question: " + q.yield());
+                    }
                     q.setScore(q.getScore() - 1.0);
                 } else if (answerTree != null && isHeadedByPronoun(answerTree)) {
                     q.setScore(q.getScore() - 1.0);
                     q.setFeatureValue("answerIsHeadedByPronoun", 1.0);
-                    if (GlobalProperties.getDebug())
+                    if (GlobalProperties.getDebug()) {
                         System.err.println("Question Ranker: downweighting due to pronoun answer (" + answerTree.yield() + "): " + q.yield());
+                    }
                 }
 
             }
@@ -376,12 +414,12 @@ public class QuestionRanker implements Serializable {
 
     }
 
-    private static List<String> findFrequentWords(Map<String, Double> typeCounts, int total) {
-        List<String> res = new ArrayList<String>();
+    private static List<String> findFrequentWords(final Map<String, Double> typeCounts, final int total) {
+        final List<String> res = new ArrayList<String>();
 
-        for (String word : typeCounts.keySet()) {
-            double cnt = typeCounts.get(word);
-            if (cnt >= minCountForFreqWords && cnt / (double) total >= minProportionForFreqWords) {
+        for (final String word : typeCounts.keySet()) {
+            final double cnt = typeCounts.get(word);
+            if (cnt >= minCountForFreqWords && cnt / total >= minProportionForFreqWords) {
                 res.add(word);
             }
         }
@@ -389,23 +427,23 @@ public class QuestionRanker implements Serializable {
         return res;
     }
 
-    private static boolean isHeadedByPronoun(Tree tree) {
+    private static boolean isHeadedByPronoun(final Tree tree) {
         String tregexOpStr;
         TregexPattern matchPattern;
         tregexOpStr = "NP !>> NP <<# (/^PRP.*/ < __=head)";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        TregexMatcher matcher = matchPattern.matcher(tree);
+        final TregexMatcher matcher = matchPattern.matcher(tree);
         return matcher.find();
     }
 
-    private static String extractHeadNounToken(Tree tree) {
+    private static String extractHeadNounToken(final Tree tree) {
         String tregexOpStr;
         TregexPattern matchPattern;
         String res = "";
 
         tregexOpStr = "NP !>> NP <<# (NNS|NN|NNP|NNPS < __=head)";
         matchPattern = TregexPatternFactory.getPattern(tregexOpStr);
-        TregexMatcher matcher = matchPattern.matcher(tree);
+        final TregexMatcher matcher = matchPattern.matcher(tree);
         if (matcher.find()) {
             res = matcher.getNode("head").label().toString();
         }
@@ -413,7 +451,7 @@ public class QuestionRanker implements Serializable {
         return res;
     }
 
-    public static void sortQuestions(List<Question> questions, boolean groupQuestionsBySourceSentence) {
+    public static void sortQuestions(final List<Question> questions, final boolean groupQuestionsBySourceSentence) {
         if (groupQuestionsBySourceSentence) {
             Collections.sort(questions, QuestionRanker.questionComparatorWithSentenceOrdering);
             // QuestionRanker.rankAndGroupQuestionsBySourceSentence(outputQuestionList);
@@ -424,7 +462,7 @@ public class QuestionRanker implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public static void main(String[] args) throws IOException {
+    public static void main(final String[] args) throws IOException {
         QuestionRanker r;
 
         String trainFile = null;
@@ -437,8 +475,8 @@ public class QuestionRanker implements Serializable {
         String saveQuestionsPath = null;
         String loadTrainingQuestionsPath = null;
         String rankerType = "linear-regression";
-        List<String> paramNames = new ArrayList<String>();
-        List<Double> paramValues = new ArrayList<Double>();
+        final List<String> paramNames = new ArrayList<String>();
+        final List<Double> paramValues = new ArrayList<Double>();
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--trainfile")) {
@@ -499,15 +537,15 @@ public class QuestionRanker implements Serializable {
         if (loadTrainingQuestionsPath != null) {
             // load serialized lists of Question objects
             try {
-                ObjectInputStream instream = new ObjectInputStream(new GZIPInputStream(new FileInputStream(loadTrainingQuestionsPath)));
+                final ObjectInputStream instream = new ObjectInputStream(new GZIPInputStream(new FileInputStream(loadTrainingQuestionsPath)));
                 trainingQuestions = (List<Question>) instream.readObject();
                 instream.close();
                 // recalculate features
-                for (Question q : trainingQuestions) {
+                for (final Question q : trainingQuestions) {
                     q.removeUnusedFeatures();
                     QuestionFeatureExtractor.getInstance().extractFinalFeatures(q);
                 }
-            } catch (ClassNotFoundException e) {
+            } catch (final ClassNotFoundException e) {
                 e.printStackTrace();
             }
         } else if (loadModelPath == null) {
@@ -518,7 +556,7 @@ public class QuestionRanker implements Serializable {
 
         if (saveQuestionsPath != null) {
             // save questions
-            ObjectOutputStream outstream = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(saveQuestionsPath)));
+            final ObjectOutputStream outstream = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(saveQuestionsPath)));
             outstream.writeObject(trainingQuestions);
             outstream.close();
         }
