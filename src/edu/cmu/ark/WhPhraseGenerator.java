@@ -337,7 +337,7 @@ public class WhPhraseGenerator {
 
         setAnswer(phraseToMove, inputTreeYield);
 
-        if (GlobalProperties.getDebug()) {
+        if (GlobalProperties.isDebug()) {
             System.err.println("getWHPhraseSubtrees: phraseToMove: " + phraseToMove.toString());
         }
 

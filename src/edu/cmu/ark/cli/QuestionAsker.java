@@ -121,6 +121,8 @@ public class QuestionAsker {
                 max_question_length = Integer.parseInt(args[i + 1]);
                 i++;
             }
+
+            i++;
         }
     }
 
@@ -130,12 +132,13 @@ public class QuestionAsker {
         question_transformer.setDoNonPronounNPC(do_non_pronoun_npc);
 
         if (null == model_path) {
-            System.err.println("[Question Akser] Fatal error: path to model is needed (--model)");
+            System.err.println("[Question Asker] Fatal error: path to model is needed (--model)");
             System.exit(-1);
         }
 
-        System.out.println("[Question Akser] Loading question ranking models from " + model_path + "...");
+        System.out.print("[Question Asker] Loading question ranking models from " + model_path + "...");
         question_ranker.loadModel(model_path);
+        System.out.println("Done");
     }
 
     private void process(final String input) {
@@ -147,13 +150,13 @@ public class QuestionAsker {
             final List<Tree> parsed_sentences = new ArrayList<Tree>();
             for (final String sentence : sentences) {
                 if (is_debug) {
-                    System.err.println("[Question Akser] sentence: " + sentence);
+                    System.err.println("[Question Asker] sentence: " + sentence);
                 }
 
                 parsed_sentences.add(AnalysisUtilities.parseSentence(sentence).getTree());
             }
             if (is_debug) {
-                System.err.println("[Question Akser] Parsing time:\t" + (System.currentTimeMillis() - start) / 1000.0);
+                System.err.println("[Question Asker] Parsing time:\t" + (System.currentTimeMillis() - start) / 1000.0);
             }
 
             // Step 1: sentence transformation
@@ -163,7 +166,7 @@ public class QuestionAsker {
             final List<Question> output_questions = new ArrayList<Question>();
             for (final Question transformation : transformed_sentences) {
                 if (is_debug) {
-                    System.err.println("[Question Akser] Stage 2 Input: " + transformation.getIntermediateTree().yield().toString());
+                    System.err.println("[Question Asker] Stage 2 Input: " + transformation.getIntermediateTree().yield().toString());
                 }
                 question_transducer.generateQuestionsFromParse(transformation);
                 output_questions.addAll(question_transducer.getQuestions());
@@ -179,7 +182,7 @@ public class QuestionAsker {
             printQuestions(output_questions);
 
             if (is_debug) {
-                System.err.println("[Question Akser] Time elapsed:\t" + (System.currentTimeMillis() - start) / 1000.0);
+                System.err.println("[Question Asker] Time elapsed:\t" + (System.currentTimeMillis() - start) / 1000.0);
                 System.err.println("\nInput Text:");
             }
         } catch (final Exception e) {
@@ -236,7 +239,7 @@ public class QuestionAsker {
 
         // Get document from stdin
         do {
-            if (GlobalProperties.getDebug()) {
+            if (GlobalProperties.isDebug()) {
                 System.err.println("\nInput Text:");
             }
 
@@ -246,7 +249,7 @@ public class QuestionAsker {
             }
 
             asker.process(input);
-        } while (GlobalProperties.getDebug());
+        } while (GlobalProperties.isDebug());
     }
 
     // TODO: Check unused

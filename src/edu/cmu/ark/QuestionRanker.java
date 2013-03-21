@@ -357,7 +357,7 @@ public class QuestionRanker implements Serializable {
             final List<String> wordTokens = BagOfWordsExtractor.getInstance().extractNounTokensFromTrees(parsedSentences);
             final Map<String, Double> typeCounts = BagOfWordsExtractor.getInstance().extractCounts(wordTokens);
 
-            if (GlobalProperties.getDebug()) {
+            if (GlobalProperties.isDebug()) {
                 System.err.println("Frequent Words: " + findFrequentWords(typeCounts, wordTokens.size()).toString());
             }
 
@@ -377,7 +377,7 @@ public class QuestionRanker implements Serializable {
                 if (typeCounts.containsKey(headWord) && typeCounts.get(headWord) >= threshold) {
                     q.setScore(q.getScore() - 1.0);
                     q.setFeatureValue("answerIsFrequentWord", 1.0);
-                    if (GlobalProperties.getDebug()) {
+                    if (GlobalProperties.isDebug()) {
                         System.err.println("Question Ranker: downweighting due to frequent word (" + headWord + ") in answer: " + q.yield());
                     }
                 }
@@ -396,14 +396,14 @@ public class QuestionRanker implements Serializable {
             for (final Question q : questions) {
                 final Tree answerTree = q.getAnswerPhraseTree();
                 if (QuestionTransducer.containsUnresolvedPronounsOrDemonstratives(q)) {
-                    if (GlobalProperties.getDebug()) {
+                    if (GlobalProperties.isDebug()) {
                         System.err.println("Question Ranker: downweighting due to pronoun in question: " + q.yield());
                     }
                     q.setScore(q.getScore() - 1.0);
                 } else if (answerTree != null && isHeadedByPronoun(answerTree)) {
                     q.setScore(q.getScore() - 1.0);
                     q.setFeatureValue("answerIsHeadedByPronoun", 1.0);
-                    if (GlobalProperties.getDebug()) {
+                    if (GlobalProperties.isDebug()) {
                         System.err.println("Question Ranker: downweighting due to pronoun answer (" + answerTree.yield() + "): " + q.yield());
                     }
                 }

@@ -39,6 +39,7 @@ import net.didion.jwnl.dictionary.Dictionary;
 
 import org.apache.commons.lang.StringUtils;
 
+import edu.cmu.ark.cli.VerbConjugator;
 import edu.cmu.ark.data.ParseResult;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.Label;
@@ -61,20 +62,15 @@ public class AnalysisUtilities {
     private static boolean                        is_loaded;
 
     private static LexicalizedParser              parser;
-    private final static VerbConjugator           conjugator        = new VerbConjugator();
     private final static CollinsHeadFinder        head_finder       = new CollinsHeadFinder();
     private final static LabeledScoredTreeFactory tree_factory      = new LabeledScoredTreeFactory();
     private final static PennTreebankLanguagePack ptb_language_pack = new PennTreebankLanguagePack();
 
     public static void load() {
         if (!is_loaded) {
-            conjugator.load(GlobalProperties.getProperties().getProperty("verbConjugationsFile", "config" + File.separator + "verbConjugations.txt"));
+            VerbConjugator.load_conjugations(GlobalProperties.getProperties().getProperty("verbConjugationsFile", "config" + File.separator + "verbConjugations.txt"));
             is_loaded = true;
         }
-    }
-
-    public static VerbConjugator getConjugator() {
-        return conjugator;
     }
 
     public static CollinsHeadFinder getHeadFinder() {
@@ -82,43 +78,34 @@ public class AnalysisUtilities {
     }
 
     public static String getLemma(final String word, final String pos) {
-        if (!(pos.startsWith("N") || pos.startsWith("V") || pos.startsWith("J") || pos.startsWith("R"))
-                || pos.startsWith("NNP"))
-        {
+        if (!(pos.startsWith("N") || pos.startsWith("V") || pos.startsWith("J") || pos.startsWith("R")) || pos.startsWith("NNP")) {
             return word.toLowerCase();
         }
 
-        String res = word.toLowerCase();
+        final String result = word.toLowerCase();
 
-        if (res.equals("is") || res.equals("are") || res.equals("were") || res.equals("was")) {
-            res = "be";
+        if (result.equals("is") || result.equals("are") || result.equals("were") || result.equals("was")) {
+            return "be";
         } else {
             try {
                 IndexWord iw;
                 if (pos.startsWith("V")) {
-                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.VERB, res);
+                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.VERB, result);
                 } else if (pos.startsWith("N")) {
-                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.NOUN, res);
+                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.NOUN, result);
                 } else if (pos.startsWith("J")) {
-                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.ADJECTIVE, res);
+                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.ADJECTIVE, result);
                 } else {
-                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.ADVERB, res);
+                    iw = Dictionary.getInstance().getMorphologicalProcessor().lookupBaseForm(POS.ADVERB, result);
                 }
 
-                if (iw == null) {
-                    return res;
-                }
-                res = iw.getLemma();
+                return null == iw ? result : iw.getLemma();
             } catch (final Exception e) {
                 e.printStackTrace();
             }
         }
 
-        return res;
-    }
-
-    public static String getSurfaceForm(final String lemma, final String pos) {
-        return conjugator.getSurfaceForm(lemma, pos);
+        return result;
     }
 
     /**
@@ -204,14 +191,14 @@ public class AnalysisUtilities {
                 parseScore = -99999.0;
             }
 
-            if (GlobalProperties.getDebug()) {
+            if (GlobalProperties.isDebug()) {
                 System.err.println("result (parse):" + result);
             }
             parse = readTreeFromString(result);
             return new ParseResult(true, parse, parseScore);
 
         } catch (final Exception ex) {
-            if (GlobalProperties.getDebug())
+            if (GlobalProperties.isDebug())
             {
                 System.err.println("Could not connect to parser server.");
                 // ex.printStackTrace();

@@ -93,7 +93,7 @@ public class SuperSenseWrapper {
             client.close();
 
         } catch (final Exception ex) {
-            if (GlobalProperties.getDebug()) {
+            if (GlobalProperties.isDebug()) {
                 System.err.println("Could not connect to SST server.");
             }
         }
@@ -118,7 +118,7 @@ public class SuperSenseWrapper {
             result.add("0");
         }
 
-        if (GlobalProperties.getDebug()) {
+        if (GlobalProperties.isDebug()) {
             System.err.println("annotateSentenceSST: " + result);
         }
         return result;

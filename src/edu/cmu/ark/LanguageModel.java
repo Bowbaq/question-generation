@@ -98,7 +98,7 @@ public class LanguageModel {
         backOffWeights = new HashMap<String, Double>();
         frequencies.put("<unk>", 0.0); // just in case nothing loads
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.isDebug())
             System.err.print("Loading language model from " + filename + "...");
 
         try {
@@ -131,7 +131,7 @@ public class LanguageModel {
             e.printStackTrace();
         }
 
-        if (GlobalProperties.getDebug())
+        if (GlobalProperties.isDebug())
             System.err.println("done.");
     }
 

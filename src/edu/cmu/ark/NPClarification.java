@@ -102,7 +102,7 @@ public class NPClarification {
             final List<Tree> replacedMentionTrees = new ArrayList<Tree>();
             final List<Tree> replacementMentionTrees = new ArrayList<Tree>();
 
-            if (GlobalProperties.getDebug()) {
+            if (GlobalProperties.isDebug()) {
                 System.err.println("NPClarification processing: " + qRoot.yield().toString());
             }
 
@@ -140,7 +140,7 @@ public class NPClarification {
             }
 
             if (modified && (!hadPronouns || hadPronouns && resolvedPronounsIfNecessary)) {
-                if (GlobalProperties.getDebug()) {
+                if (GlobalProperties.isDebug()) {
                     System.err.println("NPClarification added: " + qCopy.getIntermediateTree().yield().toString());
                 }
 
@@ -150,7 +150,7 @@ public class NPClarification {
             }
 
             if (!modified && resolvedPronounsIfNecessary && hadPronouns) {
-                if (GlobalProperties.getDebug()) {
+                if (GlobalProperties.isDebug()) {
                     System.err.println("NPClarification resolved pronouns in: " + q.getIntermediateTree().yield().toString());
                 }
                 // set the NPC feature for the ORIGINAL tree (we don't need to add it), not the copy
@@ -531,7 +531,7 @@ public class NPClarification {
             GlobalProperties.setDebug(true);
             // ARKref.Opts.debug = true;
 
-            if (GlobalProperties.getDebug()) {
+            if (GlobalProperties.isDebug()) {
                 System.err.println("\nInput Text:");
             }
             String doc;

@@ -28,16 +28,22 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 public class GlobalProperties {
+    private static Properties   properties;
+    private static final String default_properties_file_path = "config" + File.separator + "QuestionTransducer.properties";
+
+    private static boolean      is_debug;
+    private static boolean      compute_features             = true;
+
     public static Properties getProperties() {
         if (properties == null) {
-            String defaultPath = "config" + File.separator + "QuestionTransducer.properties";
+            final String defaultPath = "config" + File.separator + "QuestionTransducer.properties";
             loadProperties(defaultPath);
         }
         return properties;
     }
 
-    public static void loadProperties(String propertiesFile) {
-        if (!(new File(propertiesFile).exists())) {
+    public static void loadProperties(final String propertiesFile) {
+        if (!new File(propertiesFile).exists()) {
             System.err.println("properties file not found at the location, " + propertiesFile + ".  Please specify with --properties PATH.");
             System.exit(0);
         }
@@ -45,29 +51,25 @@ public class GlobalProperties {
         properties = new Properties();
         try {
             properties.load(new FileInputStream(propertiesFile));
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
             System.exit(0);
         }
     }
 
-    public static void setDebug(boolean debug) {
-        DEBUG = debug;
+    public static void setDebug(final boolean debug) {
+        is_debug = debug;
     }
 
-    public static boolean getDebug() {
-        return DEBUG;
+    public static boolean isDebug() {
+        return is_debug;
     }
 
-    public static void setComputeFeatures(boolean b) {
-        computeFeatures = b;
+    public static void setComputeFeatures(final boolean flag) {
+        compute_features = flag;
     }
 
     public static boolean getComputeFeatures() {
-        return computeFeatures;
+        return compute_features;
     }
-
-    private static Properties properties;
-    private static boolean    DEBUG;
-    private static boolean    computeFeatures = true;
 }
