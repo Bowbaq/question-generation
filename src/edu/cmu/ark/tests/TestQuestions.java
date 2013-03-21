@@ -37,78 +37,78 @@ public class TestQuestions extends TestCase {
     }
 
     public void testComplementsInPPs() {
-        Tree parse = AnalysisUtilities.load().parseSentence("Putin was president of Russia").parse;
+        Tree parse = AnalysisUtilities.parseSentence("Putin was president of Russia").getTree();
         List<String> res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who was president of Russia?"));
         assertTrue(res.toString(), res.contains("What was Putin president of?") || res.contains("Where was Putin president of?"));
         assertTrue(res.toString(), res.contains("Who was Putin?"));
 
-        parse = AnalysisUtilities.load().parseSentence("The president of Russia was Putin").parse;
+        parse = AnalysisUtilities.parseSentence("The president of Russia was Putin").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who was Putin?"));
         assertFalse(res.toString(), res.contains("What was the president of Putin?") || res.contains("Where was the president of Putin?"));
 
-        parse = AnalysisUtilities.load().parseSentence("The capital of Alaska was visited by John.").parse;
+        parse = AnalysisUtilities.parseSentence("The capital of Alaska was visited by John.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What was visited by John?"));
         assertFalse(res.toString(), res.contains("What was the capital of visited by John?") || res.contains("Where was the capital of visited by John?"));
 
         // parser doesn't produce the right parse with "in Alaska" attaching to "city"
-        parse = AnalysisUtilities.load().readTreeFromString("(ROOT (S (NP (NNP John)) (VP (VBD visited) (NP (NP (DT a) (NN city)) (PP (IN in) (NP (NNP Alaska))))) (. .)))");
+        parse = AnalysisUtilities.readTreeFromString("(ROOT (S (NP (NNP John)) (VP (VBD visited) (NP (NP (DT a) (NN city)) (PP (IN in) (NP (NNP Alaska))))) (. .)))");
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What did John visit a city in?") || res.contains("Where did John visit a city in?"));
         assertTrue(res.toString(), res.contains("What did John visit?") || res.contains("Where did John visit?"));
 
-        parse = AnalysisUtilities.load().parseSentence("James saw John in the hall of mirrors.").parse;
+        parse = AnalysisUtilities.parseSentence("James saw John in the hall of mirrors.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What did James see John in?"));
         assertFalse(res.toString(), res.contains("What did James see John in the hall of?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John read a book about linguistics.").parse;
+        parse = AnalysisUtilities.parseSentence("John read a book about linguistics.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What did John read?"));
         assertTrue(res.toString(), res.contains("What did John read a book about?"));
     }
 
     public void testAuxiliariesAndVerbDecomposition() {
-        Tree parse = AnalysisUtilities.load().parseSentence("I walked.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("I walked.").getTree();
         List<String> res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 2));
         assertTrue(res.toString(), res.contains("Who walked?"));
         assertTrue(res.toString(), res.contains("Did I walk?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I may have walked.").parse;
+        parse = AnalysisUtilities.parseSentence("I may have walked.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 2));
         assertTrue(res.toString(), res.contains("Who may have walked?"));
         assertTrue(res.toString(), res.contains("May I have walked?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I did walk.").parse;
+        parse = AnalysisUtilities.parseSentence("I did walk.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 2));
         assertTrue(res.toString(), res.contains("Who did walk?"));
         assertTrue(res.toString(), res.contains("Did I walk?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I have walked.").parse;
+        parse = AnalysisUtilities.parseSentence("I have walked.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 2));
         assertTrue(res.toString(), res.contains("Who has walked?"));
         assertTrue(res.toString(), res.contains("Have I walked?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I have been walking.").parse;
+        parse = AnalysisUtilities.parseSentence("I have been walking.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 2));
         assertTrue(res.toString(), res.contains("Who has been walking?"));
         assertTrue(res.toString(), res.contains("Have I been walking?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I had a book.").parse;
+        parse = AnalysisUtilities.parseSentence("I had a book.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What did I have?"));
         assertTrue(res.toString(), res.contains("Did I have a book?"));
         assertFalse(res.toString(), res.contains("Had I a book?"));
         assertFalse(res.toString(), res.contains("I had a book?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I did a bad thing.").parse;
+        parse = AnalysisUtilities.parseSentence("I did a bad thing.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What did I do?"));
         assertTrue(res.toString(), res.contains("Did I do a bad thing?"));
@@ -117,59 +117,59 @@ public class TestQuestions extends TestCase {
     }
 
     public void testVerbalComplements() {
-        Tree parse = AnalysisUtilities.load().parseSentence("John knows that James plays baseball.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("John knows that James plays baseball.").getTree();
         List<String> res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What does John know?"));
         assertTrue(res.toString(), res.contains("Who knows that James plays baseball?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John will play when Mary comes.").parse;
+        parse = AnalysisUtilities.parseSentence("John will play when Mary comes.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What will John play?"));
         assertTrue(res.toString(), res.contains("Who will play when Mary comes?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John will play what Mary chooses.").parse;
+        parse = AnalysisUtilities.parseSentence("John will play what Mary chooses.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What will John play?"));
         assertTrue(res.toString(), res.contains("Who will play what Mary chooses?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John will play whatever Mary chooses.").parse;
+        parse = AnalysisUtilities.parseSentence("John will play whatever Mary chooses.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What will John play?"));
         assertTrue(res.toString(), res.contains("Who will play whatever Mary chooses?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John will play even if Mary does not come.").parse;
+        parse = AnalysisUtilities.parseSentence("John will play even if Mary does not come.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What will John play?"));
         assertTrue(res.toString(), res.contains("Who will play even if Mary does not come?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John is hopeful that James will play.").parse;
+        parse = AnalysisUtilities.parseSentence("John is hopeful that James will play.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What is John hopeful?"));
         assertTrue(res.toString(), res.contains("Who is hopeful that James will play?"));
 
-        parse = AnalysisUtilities.load().parseSentence("James knows how to win.").parse;
+        parse = AnalysisUtilities.parseSentence("James knows how to win.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What does James know?"));
         assertTrue(res.toString(), res.contains("Who knows how to win?"));
 
-        parse = AnalysisUtilities.load().parseSentence("James knows how much money the car is worth.").parse;
+        parse = AnalysisUtilities.parseSentence("James knows how much money the car is worth.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What does James know?"));
         assertTrue(res.toString(), res.contains("Who knows how much money the car is worth?"));
     }
 
     public void testMainVerbCopula() {
-        Tree parse = AnalysisUtilities.load().parseSentence("He was president.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("He was president.").getTree();
         List<String> res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who was president?"));
         assertTrue(res.toString(), res.contains("What was he?") || res.contains("Who was he?"));
         assertTrue(res.toString(), res.contains("Was he president?"));
 
-        parse = AnalysisUtilities.load().parseSentence("My favorite activity is to run in the park.").parse;
+        parse = AnalysisUtilities.parseSentence("My favorite activity is to run in the park.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What is my favorite activity to run in?"));
 
-        parse = AnalysisUtilities.load().parseSentence("My favorite activity seems to be to run in the park.").parse;
+        parse = AnalysisUtilities.parseSentence("My favorite activity seems to be to run in the park.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What does my favorite activity seem to be to run in?"));
 
@@ -181,7 +181,7 @@ public class TestQuestions extends TestCase {
         List<String> res;
 
         sentence = "The player seemed finished with his turn.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("Seemed the player finished with his turn?"));
         assertTrue(res.toString(), res.contains("Did the player seem finished with his turn?"));
@@ -194,7 +194,7 @@ public class TestQuestions extends TestCase {
         List<String> res;
 
         sentence = "John said, ``Mary likes Bob.''";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
 
         // not going to deal with placing the q mark outside or inside the quotation marks as appropriate...
@@ -217,13 +217,13 @@ public class TestQuestions extends TestCase {
         List<String> res;
 
         sentence = "Dogs chase cars.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What chase cars?"));
         assertFalse(res.toString(), res.contains("What chases cars?"));
 
         sentence = "Dogs are animals.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What are dogs?"));
         assertTrue(res.toString(), res.contains("What are animals?"));
@@ -232,7 +232,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testWonderWho() {
-        Tree parse = AnalysisUtilities.load().parseSentence("I wonder who he likes.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("I wonder who he likes.").getTree();
         List<String> res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 3));
         assertTrue(res.toString(), res.contains("Who wonders who he likes?"));
@@ -246,19 +246,19 @@ public class TestQuestions extends TestCase {
         List<String> res;
 
         sentence = "I went to work, barely catching the bus.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What did I go to work, barely catching?"));
 
         sentence = "I went to the building carrying a backpack.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What did I go to the building carrying?"));
         assertTrue(res.toString(), res.contains("What did I go to carrying a backpack?"));
     }
 
     public void testPassiveDitransitiveRecipientIsNotIsland() {
-        Tree parse = AnalysisUtilities.load().parseSentence("I was given a book by her.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("I was given a book by her.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 4));
@@ -270,7 +270,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testWithTelescope() {
-        Tree parse = AnalysisUtilities.load().parseSentence("He saw her with a telescope.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("He saw her with a telescope.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 4));
@@ -307,7 +307,7 @@ public class TestQuestions extends TestCase {
 
     /*
      * public void testAvoidPronounsInComplementPhrases(){
-     * Tree parse = AnalysisUtilities.getInstance().parseSentence("John says he will study.").parse;
+     * Tree parse = AnalysisUtilities.getInstance().parseSentence("John says he will study.").getTree();
      * List<String> res;
      * res = getQuestionOutputStringsFromParse(qt, parse);
      * assertTrue(res.toString(),res.contains("Who says he will study?"));
@@ -316,7 +316,7 @@ public class TestQuestions extends TestCase {
      */
 
     public void testAvoidDemonstratives() {
-        Tree parse = AnalysisUtilities.load().parseSentence("John liked that book.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("John liked that book.").getTree();
         List<String> res;
         qt.setAvoidPronounsAndDemonstratives(true);
         res = getQuestionOutputStringsFromParse(qt, parse);
@@ -326,7 +326,7 @@ public class TestQuestions extends TestCase {
 
     public void testExistentialThere() {
         String sentence = "There were thousands of reasons.";
-        Tree parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        Tree parse = AnalysisUtilities.parseSentence(sentence).getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("Were there thousands of reasons?"));
@@ -335,7 +335,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testPuntOnTwoNPs() {
-        Tree parse = AnalysisUtilities.load().parseSentence("He last week issued a report.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("He last week issued a report.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 2));
@@ -349,28 +349,28 @@ public class TestQuestions extends TestCase {
         List<String> res;
 
         sentence = "He knew that he would win the race.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What did he know that he would win?"));
 
         sentence = "He ran so he would win the race.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What did he run so he would win?"));
 
         sentence = "He discovered the theory since she wrote the book.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("What did he discover the theory since she wrote?"));
 
-        parse = AnalysisUtilities.load().parseSentence("He believed John saw a miracle.").parse;
+        parse = AnalysisUtilities.parseSentence("He believed John saw a miracle.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who believed John saw a miracle?"));
         assertTrue(res.toString(), res.contains("Who did he believe saw a miracle?"));
         assertTrue(res.toString(), res.contains("What did he believe John saw?"));
         assertTrue(res.toString(), res.contains("Did he believe John saw a miracle?"));
 
-        parse = AnalysisUtilities.load().parseSentence("He believed that John saw a miracle.").parse;
+        parse = AnalysisUtilities.parseSentence("He believed that John saw a miracle.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who believed that John saw a miracle?"));
         assertTrue(res.toString(), res.contains("What did he believe that John saw?"));
@@ -378,7 +378,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testActiveDitransitiveRecipientIsIsland() {
-        Tree parse = AnalysisUtilities.load().parseSentence("He gave her a book.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("He gave her a book.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         // assertTrue(res.toString(),res.contains("What was interesting?"));
@@ -387,13 +387,13 @@ public class TestQuestions extends TestCase {
     }
 
     public void testParsing() {
-        Tree res = AnalysisUtilities.load().parseSentence("I walked.").parse;
+        Tree res = AnalysisUtilities.parseSentence("I walked.").getTree();
         String parseStr = res.toString();
         assertTrue(parseStr, parseStr.equals("(ROOT (S (NP (PRP I)) (VP (VBD walked)) (. .)))"));
     }
 
     public void testDontTreatSententialComplementsAsIslands() {
-        Tree parse = AnalysisUtilities.load().parseSentence("I told you that he left the book.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("I told you that he left the book.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 5));
@@ -406,7 +406,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testSubjectOfSententialComplementsCanMoveWhenNoComplementizerPresent() {
-        Tree parse = AnalysisUtilities.load().parseSentence("I knew John read the book.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("I knew John read the book.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 5));
@@ -419,7 +419,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testSubjectOfSententialComplementsCantMoveWhenComplementizerPresent() {
-        Tree parse = AnalysisUtilities.load().parseSentence("I knew that John read the book.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("I knew that John read the book.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), (res.size() == 4));
@@ -431,7 +431,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testTreatRelativeClausesAsIslands() {
-        Tree parse = AnalysisUtilities.load().parseSentence("I bought the book that he saw.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("I bought the book that he saw.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who bought the book that he saw?"));
@@ -441,7 +441,7 @@ public class TestQuestions extends TestCase {
 
     public void testDeepNesting() {
         String sentence = "He felt that John thought that Mary said that Harry argued that Susan liked the new car.";
-        Tree parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        Tree parse = AnalysisUtilities.parseSentence(sentence).getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who felt that John thought that Mary said that Harry argued that Susan liked the new car?"));
@@ -450,7 +450,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testObjectOfPreposition() {
-        Tree parse = AnalysisUtilities.load().parseSentence("He ran in the park.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("He ran in the park.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who ran in the park?"));
@@ -469,7 +469,7 @@ public class TestQuestions extends TestCase {
     }
 
     public void testSubjectIsIsland() {
-        Tree parse = AnalysisUtilities.load().parseSentence("That he ran was surprising.").parse;
+        Tree parse = AnalysisUtilities.parseSentence("That he ran was surprising.").getTree();
         List<String> res;
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What was surprising?"));
@@ -481,32 +481,32 @@ public class TestQuestions extends TestCase {
         Tree parse;
         List<String> res;
 
-        parse = AnalysisUtilities.load().parseSentence("That man bought a car.").parse;
+        parse = AnalysisUtilities.parseSentence("That man bought a car.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who bought a car?"));
         assertTrue(res.toString(), res.contains("What did that man buy?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I like cars.").parse;
+        parse = AnalysisUtilities.parseSentence("I like cars.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who likes cars?"));
         assertTrue(res.toString(), res.contains("What do I like?"));
 
         // capitalization test for proper nouns at the start of the sentence
-        parse = AnalysisUtilities.load().parseSentence("Rivers likes cars.").parse;
+        parse = AnalysisUtilities.parseSentence("Rivers likes cars.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What does Rivers like?"));
 
         // capitalization test for proper nouns at the start of the sentence
-        parse = AnalysisUtilities.load().parseSentence("Supporters followed Castro.").parse;
+        parse = AnalysisUtilities.parseSentence("Supporters followed Castro.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("Who did Supporters follow?"));
         assertTrue(res.toString(), res.contains("Who did supporters follow?"));
 
-        parse = AnalysisUtilities.load().parseSentence("I won $500.").parse;
+        parse = AnalysisUtilities.parseSentence("I won $500.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who won $500?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John lives in Pittsburgh, PA.").parse;
+        parse = AnalysisUtilities.parseSentence("John lives in Pittsburgh, PA.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Who lives in Pittsburgh, PA.?") || res.contains("Who lives in Pittsburgh, PA?"));
     }
@@ -521,13 +521,13 @@ public class TestQuestions extends TestCase {
         List<String> res;
 
         sentence = "While I was a student, I studied math.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("While I was a student, what did I study?"));
         assertTrue(res.toString(), res.contains("While I was a student, who studied math?"));
         assertTrue(res.toString(), res.contains("While I was a student, did I study math?"));
 
-        parse = AnalysisUtilities.load().parseSentence("However, quickly, John ran.").parse;
+        parse = AnalysisUtilities.parseSentence("However, quickly, John ran.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("However, quickly, who ran?"));
         assertTrue(res.toString(), res.contains("However, quickly, did John run?"));
@@ -535,36 +535,36 @@ public class TestQuestions extends TestCase {
         assertFalse(res.toString(), res.contains("Quickly, however who ran?"));
         assertFalse(res.toString(), res.contains("However, who quickly, ran?"));
 
-        parse = AnalysisUtilities.load().parseSentence("Fewer in numbers , the Red Kangaroo occupies deserts.").parse;
+        parse = AnalysisUtilities.parseSentence("Fewer in numbers , the Red Kangaroo occupies deserts.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Fewer in numbers, does the Red Kangaroo occupy deserts?"));
         assertTrue(res.toString(), res.contains("Fewer in numbers, what does the Red Kangaroo occupy?"));
 
         sentence = "In January, John will meet Mary.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("In January, who will John meet?"));
         assertTrue(res.toString(), res.contains("In January, who will meet Mary?"));
         assertTrue(res.toString(), res.contains("In January, will John meet Mary?"));
 
-        parse = AnalysisUtilities.load().parseSentence("During school, John rarely studied.").parse;
+        parse = AnalysisUtilities.parseSentence("During school, John rarely studied.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("During school, rarely who studied?"));
         assertFalse(res.toString(), res.contains("Who during school, rarely studied?"));
         assertTrue(res.toString(), res.contains("During school, who rarely studied?"));
 
-        parse = AnalysisUtilities.load().parseSentence("While in school, John rarely studied.").parse;
+        parse = AnalysisUtilities.parseSentence("While in school, John rarely studied.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("While in school, rarely who studied?"));
         assertTrue(res.toString(), res.contains("While in school, who rarely studied?"));
         assertTrue(res.toString(), res.contains("While in school, did John rarely study?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John rarely studied.").parse;
+        parse = AnalysisUtilities.parseSentence("John rarely studied.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertFalse(res.toString(), res.contains("Rarely who studied?"));
         assertTrue(res.toString(), res.contains("Who rarely studied?"));
 
-        parse = AnalysisUtilities.load().parseSentence("Separately, John studies.").parse;
+        parse = AnalysisUtilities.parseSentence("Separately, John studies.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Separately, who studies?"));
         assertTrue(res.toString(), res.contains("Separately, does John study?"));
@@ -572,11 +572,11 @@ public class TestQuestions extends TestCase {
         assertFalse(res.toString(), res.contains("Who separately, studies?"));
         assertFalse(res.toString(), res.contains("Who, separately studies?"));
 
-        parse = AnalysisUtilities.load().parseSentence("If I had money, I would buy a car.").parse;
+        parse = AnalysisUtilities.parseSentence("If I had money, I would buy a car.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("If I had money, what would I buy?"));
 
-        parse = AnalysisUtilities.load().parseSentence("John, while running, saw James.").parse;
+        parse = AnalysisUtilities.parseSentence("John, while running, saw James.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("While running, who saw James?"));
         assertTrue(res.toString(), res.contains("While running, who did John see?"));
@@ -584,17 +584,17 @@ public class TestQuestions extends TestCase {
 
         // make sure things work without commas
         sentence = "While I was a student I studied math.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("While I was a student what did I study?"));
         assertTrue(res.toString(), res.contains("While I was a student who studied math?"));
         assertTrue(res.toString(), res.contains("While I was a student did I study math?"));
 
-        parse = AnalysisUtilities.load().parseSentence("If I had money I would buy a car.").parse;
+        parse = AnalysisUtilities.parseSentence("If I had money I would buy a car.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("If I had money what would I buy?"));
 
-        parse = AnalysisUtilities.load().parseSentence("Separately John studies.").parse;
+        parse = AnalysisUtilities.parseSentence("Separately John studies.").getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("Separately who studies?"));
         assertFalse(res.toString(), res.contains("Who separately studies?"));
@@ -611,14 +611,14 @@ public class TestQuestions extends TestCase {
         List<String> res;
 
         sentence = "While I was a student, that I studied surprised me.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         // assertTrue(res.toString(),res.contains("While I was a student, what surprised me?"));
         assertTrue(res.toString(), res.contains("While I was a student, who did that I studied surprise?"));
         assertTrue(res.toString(), res.contains("While I was a student, did that I studied surprise me?"));
 
         sentence = "My favorite activity is to run in the park.";
-        parse = AnalysisUtilities.load().parseSentence(sentence).parse;
+        parse = AnalysisUtilities.parseSentence(sentence).getTree();
         res = getQuestionOutputStringsFromParse(qt, parse);
         assertTrue(res.toString(), res.contains("What is my favorite activity?"));
 
@@ -671,7 +671,7 @@ public class TestQuestions extends TestCase {
  */
 
 // public void testMoveLeadingModifiers() {
-// Tree parse = AnalysisInfrastructure.getInstance().parseSentence("He likes her, I said.").parse;
+// Tree parse = AnalysisInfrastructure.getInstance().parseSentence("He likes her, I said.").getTree();
 // List<String> res = qt.getQuestionsFromParse(parse);
 // assertTrue(res.toString(),(res.size()==2));
 // assertTrue(res.toString(),res.contains("Who said, he likes her?"));
@@ -679,7 +679,7 @@ public class TestQuestions extends TestCase {
 // }
 
 // public void testTreatPhrasalModifiersAsIslands() {
-// Tree parse = AnalysisInfrastructure.getInstance().parseSentence("Across the country, he was opening new stores.").parse;
+// Tree parse = AnalysisInfrastructure.getInstance().parseSentence("Across the country, he was opening new stores.").getTree();
 // List<String> res = qt.getQuestionsFromParse(parse);
 // assertTrue(res.toString(),(res.size()==3));
 // assertTrue(res.toString(),res.contains("Who was opening new stores, across the country?"));
@@ -689,7 +689,7 @@ public class TestQuestions extends TestCase {
 
 /*
  * public void testDontTransformSentencesWithLeadingModifiers() {
- * Tree parse = AnalysisUtilities.getInstance().parseSentence("He likes her, I said.").parse;
+ * Tree parse = AnalysisUtilities.getInstance().parseSentence("He likes her, I said.").getTree();
  * List<String> res;
  * qt.generateQuestionsFromParse(parse);
  * res = qt.getQuestions();

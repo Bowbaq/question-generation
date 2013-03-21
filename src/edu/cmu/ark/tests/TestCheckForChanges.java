@@ -61,7 +61,7 @@ public class TestCheckForChanges extends TestCase {
         Tree parsed;
 
         for (String sentence : sentences) {
-            parsed = AnalysisUtilities.load().parseSentence(sentence).parse;
+            parsed = AnalysisUtilities.parseSentence(sentence).getTree();
             inputTrees.add(parsed);
         }
 
