@@ -3,19 +3,23 @@ package edu.cmu.ark.data;
 import edu.stanford.nlp.trees.Tree;
 
 public class ParseResult {
+    private final boolean success;
+    private final Tree    parse;
+    private final double  score;
 
-    public ParseResult(final boolean b, final Tree parse, final double parseScore) {
-        // TODO Auto-generated constructor stub
+    public ParseResult(final boolean success, final Tree parse, final double score) {
+        this.success = success;
+        this.score = score;
+        this.parse = parse;
+
     }
 
     public Tree getTree() {
-        // TODO Auto-generated method stub
-        return null;
+        return parse;
     }
 
-    public String getScore() {
-        // TODO Auto-generated method stub
-        return null;
+    public double getScore() {
+        return score;
     }
 
 }
