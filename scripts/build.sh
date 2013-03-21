@@ -6,7 +6,7 @@ TARGET=question-generation.jar
 rm -rf bin
 mkdir -p bin
 
-javac -cp $(print $(dirname $0)/lib/**/*.jar | tr ' ' :) -d bin src/**/*.java
+javac -cp $(print $(dirname $0)/../lib/**/*.jar | tr ' ' :) -d bin src/**/*.java
 
 cd bin
 jar xf ../lib/commons-logging.jar
@@ -23,6 +23,3 @@ jar cf $TARGET *
 cd ..
 
 mv bin/$TARGET .
-
-
-
