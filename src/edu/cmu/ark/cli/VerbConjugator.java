@@ -26,7 +26,6 @@ package edu.cmu.ark.cli;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -36,7 +35,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.didion.jwnl.JWNL;
-import net.didion.jwnl.JWNLException;
 import net.didion.jwnl.data.IndexWord;
 import net.didion.jwnl.data.POS;
 import net.didion.jwnl.dictionary.Dictionary;
@@ -57,10 +55,7 @@ public class VerbConjugator {
     static {
         try {
             JWNL.initialize(new FileInputStream(jwnl_config_file_path));
-        } catch (final FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (final JWNLException e) {
+        } catch (final Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -101,6 +96,7 @@ public class VerbConjugator {
                     }
                 }
             }
+            br.close();
         } catch (final Exception e) {
             e.printStackTrace();
         }

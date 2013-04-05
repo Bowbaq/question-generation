@@ -36,24 +36,24 @@ public class GlobalProperties {
 
     public static Properties getProperties() {
         if (properties == null) {
-            final String defaultPath = "config" + File.separator + "QuestionTransducer.properties";
-            loadProperties(defaultPath);
+            loadProperties(default_properties_file_path);
         }
         return properties;
     }
 
-    public static void loadProperties(final String propertiesFile) {
-        if (!new File(propertiesFile).exists()) {
-            System.err.println("properties file not found at the location, " + propertiesFile + ".  Please specify with --properties PATH.");
-            System.exit(0);
+    public static void loadProperties(final String path) {
+        if (!new File(path).exists()) {
+            System.err.println("[Properties] file not found at the location, " + path + ".  Please specify with --properties PATH.");
+            System.exit(-1);
         }
 
         properties = new Properties();
         try {
-            properties.load(new FileInputStream(propertiesFile));
+            properties.load(new FileInputStream(path));
         } catch (final Exception e) {
+            System.err.println("[Properties] failed reading configuration file");
             e.printStackTrace();
-            System.exit(0);
+            System.exit(-1);
         }
     }
 
