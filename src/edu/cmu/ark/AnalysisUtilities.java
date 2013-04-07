@@ -35,9 +35,9 @@ import net.didion.jwnl.dictionary.Dictionary;
 
 import org.apache.commons.lang.StringUtils;
 
-import edu.cmu.ark.cli.VerbConjugator;
 import edu.cmu.ark.data.ParseResult;
 import edu.cmu.ark.util.StanfordParserClient;
+import edu.cmu.ark.util.VerbConjugator;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.process.DocumentPreprocessor;

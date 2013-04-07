@@ -21,7 +21,7 @@
 // mheilman@cmu.edu
 // http://www.cs.cmu.edu/~mheilman
 
-package edu.cmu.ark.cli;
+package edu.cmu.ark.util;
 
 import java.io.BufferedReader;
 import java.io.File;

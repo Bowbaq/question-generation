@@ -37,8 +37,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.cmu.ark.cli.VerbConjugator;
 import edu.cmu.ark.data.ParseResult;
+import edu.cmu.ark.util.VerbConjugator;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.tregex.TregexMatcher;
 import edu.stanford.nlp.trees.tregex.TregexPattern;
