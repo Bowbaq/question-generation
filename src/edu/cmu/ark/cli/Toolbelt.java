@@ -16,6 +16,7 @@ import org.apache.commons.cli.ParseException;
 
 import edu.cmu.ark.GlobalProperties;
 import edu.cmu.ark.tool.BaseTool;
+import edu.cmu.ark.tool.QuestionAnswererTool;
 import edu.cmu.ark.tool.QuestionAskerTool;
 import edu.cmu.ark.tool.StanfordParserServerTool;
 
@@ -24,6 +25,7 @@ public class Toolbelt {
 
 	static {
 		Toolbelt.available_tools.add("question-asker");
+		Toolbelt.available_tools.add("question-answerer");
 		Toolbelt.available_tools.add("supersense-tagger-server");
 		Toolbelt.available_tools.add("supersense-tagger-client");
 		Toolbelt.available_tools.add("stanford-parser-server");
@@ -106,6 +108,10 @@ public class Toolbelt {
 
 		if (tool.equals("stanford-parser-server")) {
 			return new StanfordParserServerTool();
+		}
+
+		if (tool.equals("question-answerer")) {
+			return new QuestionAnswererTool();
 		}
 
 		return null;
