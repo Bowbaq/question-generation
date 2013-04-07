@@ -96,7 +96,7 @@ public class Toolbelt {
 	private static void runTool(String name, Properties options) throws FileNotFoundException, IOException {
 		BaseTool tool = Toolbelt.instantiateTool(name);
 		tool.setCommandLineOption(options);
-		tool.run(tool.getDocumentFromStdin());
+		tool.run();
 	}
 
 	private static BaseTool instantiateTool(String tool) throws FileNotFoundException, IOException {

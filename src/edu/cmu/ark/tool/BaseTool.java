@@ -23,13 +23,17 @@ public abstract class BaseTool {
 		}
 	}
 
-	public String getDocumentFromStdin() throws IOException {
+	public String getDocumentFromStdin() {
 		final BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		final StringBuilder document = new StringBuilder();
-		String line = reader.readLine();
-		while (line != null) {
-			document.append(line);
-			line = reader.readLine();
+
+		try {
+			String line = reader.readLine();
+			while (line != null) {
+				document.append(line);
+				line = reader.readLine();
+			}
+		} catch (Exception e) {
 		}
 
 		return document.length() == 0 ? null : document.toString();
@@ -37,6 +41,6 @@ public abstract class BaseTool {
 
 	abstract public String getConfigPath();
 
-	abstract public void run(String input);
+	abstract public void run();
 
 }

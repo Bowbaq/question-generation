@@ -23,13 +23,9 @@
 
 package edu.cmu.ark;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.StringReader;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,10 +37,9 @@ import org.apache.commons.lang.StringUtils;
 
 import edu.cmu.ark.cli.VerbConjugator;
 import edu.cmu.ark.data.ParseResult;
+import edu.cmu.ark.util.StanfordParserClient;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.Label;
-import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
-import edu.stanford.nlp.parser.lexparser.Options;
 import edu.stanford.nlp.process.DocumentPreprocessor;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.LabeledScoredTreeFactory;
@@ -59,15 +54,14 @@ import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
 
 public class AnalysisUtilities {
-	private static boolean							is_loaded;
-
-	private static LexicalizedParser				parser;
+	private final static StanfordParserClient		parser_client;
 	private final static CollinsHeadFinder			head_finder			= new CollinsHeadFinder();
 	private final static LabeledScoredTreeFactory	tree_factory		= new LabeledScoredTreeFactory();
 	private final static PennTreebankLanguagePack	ptb_language_pack	= new PennTreebankLanguagePack();
 
 	static {
 		VerbConjugator.load_conjugations(GlobalProperties.getProperties().getProperty("verbConjugationsFile", "config" + File.separator + "verbConjugations.txt"));
+		parser_client = new StanfordParserClient("127.0.0.1", 5556);
 	}
 
 	public static CollinsHeadFinder getHeadFinder() {
@@ -146,95 +140,7 @@ public class AnalysisUtilities {
 
 	// TODO: Bring back ParseResult / cleanup this method
 	public static ParseResult parseSentence(final String sentence) {
-		String result = "";
-		// System.err.println(sentence);
-		// see if a parser socket server is available
-		final int port = new Integer(GlobalProperties.getProperties().getProperty("parserServerPort", "5556"));
-		final String host = "127.0.0.1";
-		Socket client;
-		PrintWriter pw;
-		BufferedReader br;
-		String line;
-		Tree parse = null;
-		double parseScore = Double.MIN_VALUE;
-
-		try {
-			client = new Socket(host, port);
-
-			pw = new PrintWriter(client.getOutputStream());
-			br = new BufferedReader(new InputStreamReader(client.getInputStream()));
-			pw.println(sentence);
-			pw.flush(); // flush to complete the transmission
-
-			while ((line = br.readLine()) != null) {
-				// if(!line.matches(".*\\S.*")){
-				// System.out.println();
-				// }
-				if (br.ready()) {
-					line = line.replaceAll("\n", "");
-					line = line.replaceAll("\\s+", " ");
-					result += line + " ";
-				} else {
-					parseScore = new Double(line);
-				}
-			}
-
-			br.close();
-			pw.close();
-			client.close();
-
-			if (parse == null) {
-				parse = AnalysisUtilities.readTreeFromString("(ROOT (. .))");
-				parseScore = -99999.0;
-			}
-
-			if (GlobalProperties.isDebug()) {
-				System.err.println("result (parse):" + result);
-			}
-			parse = AnalysisUtilities.readTreeFromString(result);
-			return new ParseResult(true, parse, parseScore);
-
-		} catch (final Exception ex) {
-			if (GlobalProperties.isDebug())
-			{
-				System.err.println("Could not connect to parser server.");
-				// ex.printStackTrace();
-			}
-		}
-
-		System.err.println("parsing:" + sentence);
-
-		// if socket server not available, then use a local parser object
-		if (AnalysisUtilities.parser == null) {
-			try {
-				final Options op = new Options();
-				final String serializedInputFileOrUrl = GlobalProperties.getProperties().getProperty("parserGrammarFile", "config" + File.separator + "englishFactored.ser.gz");
-				AnalysisUtilities.parser = new LexicalizedParser(serializedInputFileOrUrl, op);
-				final int maxLength = new Integer(GlobalProperties.getProperties().getProperty("parserMaxLength", "40")).intValue();
-				AnalysisUtilities.parser.setMaxLength(maxLength);
-				AnalysisUtilities.parser.setOptionFlags("-outputFormat", "oneline");
-			} catch (final Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-		try {
-			if (AnalysisUtilities.parser.parse(sentence)) {
-				parse = AnalysisUtilities.parser.getBestParse();
-
-				// remove all the parent annotations (this is a hacky way to do it)
-				final String ps = parse.toString().replaceAll("\\[[^\\]]+/[^\\]]+\\]", "");
-				parse = AnalysisUtilities.readTreeFromString(ps);
-
-				parseScore = AnalysisUtilities.parser.getPCFGScore();
-				return new ParseResult(true, parse, parseScore);
-			}
-		} catch (final Exception e) {
-		}
-
-		parse = AnalysisUtilities.readTreeFromString("(ROOT (. .))");
-		parseScore = -99999.0;
-		return new ParseResult(false, parse, parseScore);
+		return AnalysisUtilities.parser_client.parse(sentence);
 	}
 
 	public static Tree readTreeFromString(final String parseStr) {

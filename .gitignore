@@ -25,4 +25,4 @@ local.properties
 # PDT-specific
 .buildpath
 
-question-generation.jar
+nlp-toolbelt.jar

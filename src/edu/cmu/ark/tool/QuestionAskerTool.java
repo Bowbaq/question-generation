@@ -11,6 +11,7 @@ import edu.cmu.ark.InitialTransformationStep;
 import edu.cmu.ark.Question;
 import edu.cmu.ark.QuestionRanker;
 import edu.cmu.ark.QuestionTransducer;
+import edu.cmu.ark.data.ParseResult;
 import edu.stanford.nlp.trees.Tree;
 
 public class QuestionAskerTool extends BaseTool {
@@ -48,7 +49,8 @@ public class QuestionAskerTool extends BaseTool {
 	}
 
 	@Override
-	public void run(String input) {
+	public void run() {
+		String input = getDocumentFromStdin();
 		try {
 			// Segment document into sentences
 			final List<String> sentences = AnalysisUtilities.getSentences(input);
@@ -59,7 +61,11 @@ public class QuestionAskerTool extends BaseTool {
 					System.err.println("[Question Asker] sentence: " + sentence);
 				}
 
-				parsed_sentences.add(AnalysisUtilities.parseSentence(sentence).getTree());
+				ParseResult parse = AnalysisUtilities.parseSentence(sentence);
+
+				if (null != parse) {
+					parsed_sentences.add(parse.getTree());
+				}
 			}
 
 			// Step 1: sentence transformation

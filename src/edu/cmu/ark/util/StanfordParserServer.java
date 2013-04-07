@@ -11,7 +11,6 @@ import java.net.Socket;
 
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.parser.lexparser.Options;
-import edu.stanford.nlp.trees.Tree;
 
 public class StanfordParserServer {
 	private final LexicalizedParser	parser;
@@ -25,7 +24,7 @@ public class StanfordParserServer {
 	public void serve(int port) {
 		try {
 			ServerSocket server = new ServerSocket(port);
-			System.out.println("Server is running on port " + port);
+			System.err.println("Server is running on port " + port);
 			while (true) {
 				Socket client = server.accept();
 
@@ -38,11 +37,14 @@ public class StanfordParserServer {
 				} while (in.ready());
 
 				try {
-					parser.parse(sentence.toString());
-
-					Tree best_parse = parser.getBestParse();
-					parser.getTreePrint().printTree(best_parse, out);
-					out.println(parser.getPCFGScore());
+					if (parser.parse(sentence.toString())) {
+						out.println("SUCCESS");
+						parser.getTreePrint().printTree(parser.getBestParse(), out);
+						out.println("SCORE: " + parser.getPCFGScore());
+						out.flush();
+					} else {
+						out.println("FAILURE");
+					}
 
 					/*
 					 * out.println();
@@ -51,12 +53,14 @@ public class StanfordParserServer {
 					 */
 
 				} catch (Exception badparse) {
-					out.println("(ROOT (. .))");
-					out.println("-999999999.0");
+					out.println("FAILURE");
 				}
+
+				in.close();
+				out.close();
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("Error starting up Stanford parser server on port " + port);
 		}
 	}
 }

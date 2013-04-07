@@ -24,8 +24,7 @@ public class StanfordParserServerTool extends BaseTool {
 	}
 
 	@Override
-	public void run(String input) {
+	public void run() {
 		server.serve(port);
 	}
-
 }
