@@ -54,6 +54,7 @@ public class QuestionAskerTool extends BaseTool {
 		try {
 			// Segment document into sentences
 			final List<String> sentences = AnalysisUtilities.getSentences(input);
+
 			// Parse individual sentences
 			final List<Tree> parsed_sentences = new ArrayList<Tree>();
 			for (final String sentence : sentences) {
@@ -126,9 +127,9 @@ public class QuestionAskerTool extends BaseTool {
 			System.exit(-1);
 		}
 
-		System.out.print("[Question Asker] Loading question ranking models from " + ranking_model_path + "...");
+		System.err.print("[Question Asker] Loading question ranking models from " + ranking_model_path + "...");
 		question_ranker.loadModel(ranking_model_path);
-		System.out.println("Done");
+		System.err.println("Done");
 	}
 
 	private void printQuestions(final List<Question> output_questions) {

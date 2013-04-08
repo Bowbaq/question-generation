@@ -30,7 +30,7 @@ public abstract class BaseTool {
 		try {
 			String line = reader.readLine();
 			while (line != null) {
-				document.append(line);
+				document.append(line).append('\n');
 				line = reader.readLine();
 			}
 		} catch (Exception e) {

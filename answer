@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+import sys
+import os.path
+import subprocess
+from qeditdistance import processquestions
+
+def init():
+    args = sys.argv[1:]
+    valid_args = True
+    
+    if len(args) < 2:
+        valid_args = False
+        print "Usage: ./answer <path/to/article> <path/to/questions>"
+        sys.exit(-1)
+    
+    for arg in args:
+        if not os.path.isfile(arg):
+            valid_args = False
+            print arg, "is not a valid file"
+    
+    if valid_args:
+        return args[0], args[1]
+    else:
+        sys.exit(1)
+
+def run_question_asker(path):
+    cmd = './scripts/run.sh question-asker --debug 2>/dev/null < %s' % path
+    output = subprocess.check_output(cmd, shell=True)
+
+    questions = []
+    answers = []
+    for line in output.split('\n'):
+        if line.strip() == '':
+            continue
+        
+        question, sentence, answer, score = line.strip().split('\t')
+        questions.append(question)
+        answers.append(sentence)
+
+    return questions, answers
+    
+def run_question_answerer(data):
+    cmd = './scripts/run.sh question-answerer 2>/dev/null'
+    p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate('\n'.join(data))
+    
+    return stdout
+    
+    
+article_path, questions_path = init()
+
+questions, answers = run_question_asker(article_path)
+
+with open(questions_path) as asked_questions_file:
+    asked_questions = asked_questions_file.read().split('\n')
+
+    generated_questions_output = run_question_answerer(questions)
+    asked_questions_output = run_question_answerer(asked_questions)
+    
+    # print generated_questions_output, '\n'.join(answers), asked_questions_output
+    
+    processquestions(asked_questions_output, generated_questions_output, '\n'.join(answers))

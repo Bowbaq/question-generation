@@ -276,36 +276,35 @@ public class AnalysisUtilities {
 	}
 
 	public static List<String> getSentences(String document) {
-		final DocumentPreprocessor dp = new DocumentPreprocessor(false);
-		final List<String> res = new ArrayList<String>();
-		String sentence;
+		final DocumentPreprocessor preprocessor = new DocumentPreprocessor(false);
+		final List<String> sentences = new ArrayList<String>();
 
 		document = AnalysisUtilities.preprocess(document);
 
 		final String[] paragraphs = document.split("\\n");
 
 		for (final String paragraph : paragraphs) {
-			final StringReader reader = new StringReader(paragraph);
-			List<List<? extends HasWord>> sents = new ArrayList<List<? extends HasWord>>();
+			if (GlobalProperties.isDebug()) {
+				System.err.println(paragraph);
+			}
 
+			List<List<? extends HasWord>> parsed_sentences = new ArrayList<List<? extends HasWord>>();
 			try {
-				sents = dp.getSentencesFromText(reader);
+				parsed_sentences = preprocessor.getSentencesFromText(new StringReader(paragraph));
 			} catch (final Exception e) {
 				e.printStackTrace();
 			}
 
-			for (final List<? extends HasWord> tmp1 : sents) {
-				sentence = "";
-				for (final HasWord tmp2 : tmp1) {
-					final String tmp = tmp2.word().toString();
-					sentence += tmp + " ";
+			for (final List<? extends HasWord> parsed_sentence : parsed_sentences) {
+				StringBuilder sentence = new StringBuilder();
+				for (final HasWord hasword : parsed_sentence) {
+					sentence.append(hasword.word()).append(" ");
 				}
-				sentence = sentence.trim();
-				res.add(sentence);
+				sentences.add(sentence.toString().trim());
 			}
 		}
 
-		return res;
+		return sentences;
 	}
 
 	public static String preprocess(String sentence) {
@@ -334,6 +333,7 @@ public class AnalysisUtilities {
 		sentence = sentence.replaceAll("ù|ú|û|ü", "u");
 		sentence = sentence.replaceAll("Ù|Ú|Û|Ü", "U");
 		sentence = sentence.replaceAll("ñ", "n");
+		sentence = sentence.replaceAll("� ���", "");
 
 		// contractions
 		sentence = sentence.replaceAll("can't", "can not");
