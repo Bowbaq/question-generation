@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import edu.cmu.ark.GlobalProperties;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.parser.lexparser.Options;
 
@@ -40,6 +41,11 @@ public class StanfordParserServer {
 					if (parser.parse(sentence.toString())) {
 						out.println("SUCCESS");
 						parser.getTreePrint().printTree(parser.getBestParse(), out);
+
+						if (GlobalProperties.isDebug()) {
+							System.err.println(parser.getBestParse());
+						}
+
 						out.println("SCORE: " + parser.getPCFGScore());
 						out.flush();
 					} else {

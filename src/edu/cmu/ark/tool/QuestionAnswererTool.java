@@ -41,6 +41,7 @@ public class QuestionAnswererTool extends BaseTool {
 				Collection<TypedDependency> tdl = gs.typedDependenciesCollapsed();
 				List<String> super_senses = SuperSenseWrapper.getInstance().annotateSentenceWithSupersenses(parse);
 
+        System.out.println(sentence);
 				System.out.println(parse.labeledYield());
 				System.out.println(tdl);
 				System.out.println(super_senses + "\n");
