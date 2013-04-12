@@ -147,16 +147,26 @@ public class AnalysisUtilities {
 
 	// TODO: Bring back ParseResult / cleanup this method
 	public static ParseResult parseSentence(final String sentence) {
-		if (parser.parse(sentence)) {
-			Tree parse = parser.getBestParse();
+
+	Tree parse;
+	double parseScore;
+	try{
+		if(parser.parse(sentence)){
+			parse = parser.getBestParse();
+			
 			//remove all the parent annotations (this is a hacky way to do it)
 			String ps = parse.toString().replaceAll("\\[[^\\]]+/[^\\]]+\\]", "");
 			parse = AnalysisUtilities.readTreeFromString(ps);
 			
-			double parseScore = parser.getPCFGScore();
+			parseScore = parser.getPCFGScore();
 			return new ParseResult(true, parse, parseScore);
 		}
-		else return null;
+	}catch(Exception e){
+	}
+
+	parse = readTreeFromString("(ROOT (. .))");
+    parseScore = -99999.0;
+    return new ParseResult(false, parse, parseScore);
 	}
 
 	public static Tree readTreeFromString(final String parseStr) {
@@ -349,7 +359,7 @@ public class AnalysisUtilities {
 		sentence = sentence.replaceAll("ù|ú|û|ü", "u");
 		sentence = sentence.replaceAll("Ù|Ú|Û|Ü", "U");
 		sentence = sentence.replaceAll("ñ", "n");
-		sentence = sentence.replaceAll("� ���", "");
+		sentence = sentence.replaceAll("� ���", "");
 
 		// contractions
 		sentence = sentence.replaceAll("can't", "can not");
