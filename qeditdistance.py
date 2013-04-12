@@ -6,99 +6,13 @@
 # one with questions and answers (which Dan and Maxime's program will produce)
 
 import os, sys
-import re
+import re, math
 import string
-
-"""
-input = sys.argv
-#The questions given, parsed
-qstring = input[1]
-#The possible questions, as a plaintext file
-pqstring = input[2]
-#'Possibles', so this is the list of all possible questions, parsed
-pstring = input[3]
-#'Possible answers', so this corresponds to the list of an answer for each question
-# given in pfilename
-astring = input[4]
-#outputfilename = input[4]
-"""
-
-"""
-pfile = open(pfilename)
-qfile = open(qfilename)
-afile = open(afilename)
-pqfile = open(pqfilename)
-"""
-
-def strToList(s):
-    #if(s[0] != '['): print s
-    assert(len(s) > 0 and s[0] == '[')
-    L = []
-    elem = ''
-    for char in s[1:]:
-        if(char == ','):
-            L.append(elem)
-            elem = ''
-        elif(char == ' '):
-            continue
-        elif(char == ']'):
-            L.append(elem)
-            break
-        else:
-            elem = elem + char
-    return L
-
-def savequestions(questionstring):
-    questions = []
-    postags = []
-    dependencies = []
-    sstags = []
-    #The state can be 'pos', 'dep', 'sst', or 'blank'
-    state = 'plaintext'
-    for line in questionstring.splitlines():
-        #line = line.replace('\n', '')
-        
-        if(state == 'plaintext'):
-            questions.append(line)
-            state = 'pos'        
-        elif(state == 'pos'):
-            #The questions given will already be POS tagged.  Here I'll just separate each word 
-            # (which will look like, for instance, She/PRP) 
-            # into a tuple (which will look like ('She', 'PRP')) to 
-            # store in the list.
-            # questions.append(line)
-            #qtags = [nltk.tag.str2tuple(t) for t in line.split()]
-            #Yikes, I just realized this is now a 2D list with tuples as elements - 
-            # not space efficient.  Maybe I'll change it later?
-            postags.append(strToList(line))
-            state = 'dep'
-        elif(state == 'dep'):
-            dependencies.append(strToList(line))
-            state = 'sst'
-        elif(state == 'sst'):
-            sstags.append(strToList(line))
-            state = 'blank'
-        elif(state == 'blank'):
-            state = 'plaintext'
-    
-    return (questions, postags, dependencies, sstags)
-
-"""
-(ppostags, pdependencies, psstags) = savequestions(pstring)
-assert(len(ppostags) == len(pdependencies))
-assert(len(pdependencies) == len(psstags))
-#pfile.close()
-
-(qpostags, qdependencies, qsstags) = savequestions(qstring)
-assert(len(qpostags) == len(qdependencies))
-assert(len(qdependencies) == len(qsstags))
-#qfile.close()
-"""
 
 def saveanswers(answerstring):
     answers = []
     for line in answerstring.splitlines():
-        line = line.replace('\n', '')
+        #line = line.replace('\n', '')
         answers.append(line)
     return answers
     
@@ -184,7 +98,8 @@ def filter(index, qpostags, qdependencies, qsstags, ppostags, pdependencies, pss
     # between them is the index.  Thus, ppostags[i] will represent the question for alist[i]
     # (hopefully).  The second will the score I'm assigning it, based on the similarities 
     # between the questions.
-    pquestions = []
+    pquestionsi = []
+    pquestionssim = []
             
     #Iterate over all possible questions
     for i in xrange(0, len(ppostags)):
@@ -196,41 +111,69 @@ def filter(index, qpostags, qdependencies, qsstags, ppostags, pdependencies, pss
         #I don't think this nested for loop is too big of a deal
         # because pnouns probably won't have more than a couple 
         # elements
-        '''
-        for tagpair in pnouns:
-            if(tagpair not in ppos):
-                pquestions.append((question, i))
-        '''
+        for tagpair in set(pnouns):
+            if(tagpair in ppos):
+                #This is very important!
+                simscore += 20
+        
+        ssnum = 0
         for sstag in qsst:
-            if(sstag != 0 and sstag in psst):
-                simscore += 1 
-        if(simscore >= 1):
-            pquestions.append((i, simscore))
-    if(len(pquestions) == 0): pquestions = questionlist
+            if(sstag != '0' and sstag in psst):
+                ssnum += 1.0 
+        ssprop = ssnum/float(len(qsst))
+        #The reason I square it is because I want an exponential scale.  I don't want something
+        # that's only 40% similar to get 4 points.  If I square it, it will get 1 point.
+        # Something that's got 80% of the same tags will get 6 points, 90% will get 8.
+        simscore += int((ssprop**2) * 10)
+        
+        for dep in qdep:
+            depname = dep[0]
+            if(dep in pdep):
+                simscore += 3
+                if(depname == 'amod' or depname == 'nn' or depname == 'nsubj'):
+                    simscore += 10
+                elif(depname == 'attr' or depname == 'root'):
+                    simscore += 5
+        
+        threshold = 5
+        if(simscore >= threshold):
+            pquestionsi.append(i)
+            pquestionssim.append(simscore)
+        
+    #if(len(pquestions) == 0): pquestions = questionlist
     #print pquestions
-    return pquestions
+    return (pquestionsi, pquestionssim)
 
 #outputfile = open(outputfilename, 'w+')
-def processquestions(qstring, pstring, astring):    
-    (pos_questions, ppostags, pdependencies, psstags) = savequestions(pstring)
-    
-    assert(len(pos_questions) == len(ppostags))
+
+def processquestions(qtuple, ptuple, astring):
+
+    (psquestions, ppostags, pdependencies, psstags) = ptuple
+    assert(len(psquestions) == len(ppostags))
     assert(len(ppostags) == len(pdependencies))
     assert(len(pdependencies) == len(psstags))
     #pfile.close()
 
-    (ask_questions, qpostags, qdependencies, qsstags) = savequestions(qstring)
+    (questions, qpostags, qdependencies, qsstags) = qtuple
+    assert(len(questions) == len(qpostags))
     assert(len(qpostags) == len(qdependencies))
     assert(len(qdependencies) == len(qsstags))
     
     alist = saveanswers(astring)
     assert(len(alist) == len(ppostags))
 
+    correct = 0
+    total = 0
     for i in xrange(0, len(qpostags)):
-        pquestions = filter(i, qpostags, qdependencies, qsstags, ppostags, pdependencies, psstags)
+        (pquestionsi, pquestionssim) = filter(i, qpostags, qdependencies, qsstags, ppostags, pdependencies, psstags)
         #print pquestions
-        if(len(pquestions) == 1): answer = alist[0][i]
-        elif(len(pquestions) == 0): 
+        if(len(pquestionsi) == 1): 
+            closest_index = 0
+            qi = pquestionsi[0]
+            answer = alist[qi]
+            assocq = psquestions[qi]
+        elif(len(pquestionsi) == 0): 
+            print "This is a problem"
             #outputfile.write("This is a problem\n")
             answer = alist[0]
         #min_distance = 1000
@@ -238,9 +181,9 @@ def processquestions(qstring, pstring, astring):
             high_sim = 0
             closest_index = 0
             #cq_index = 0
-            for i in xrange(0, len(pquestions)):
-                pquestion = pquestions[i]
-                sim = pquestion[1]
+            for j in xrange(0, len(pquestionsi)):
+                qindex = pquestionsi[j]
+                sim = pquestionssim[j]
                 #edit_distance = min_edit_distance(line, pquestion)
                 '''
                 if(edit_distance == 0):
@@ -253,10 +196,10 @@ def processquestions(qstring, pstring, astring):
                     cq_index = i
                 '''
                 if(sim > high_sim):
-                    closest_index = pquestion[0]
+                    closest_index = qindex
                     high_sim = sim
                 answer = alist[closest_index]
+                assocq = psquestions[closest_index]
             #outputfile.write(answer + '\n')
-        print "Question is \"%s\" and answer is \"%s\"\n" % (pos_questions[closest_index], answer)
-
-#outputfile.close()
+        print answer
+        total += 1
