@@ -43,15 +43,15 @@ def filter(index, qpostags, qdependencies, qsstags, ppostags, pdependencies, pss
             backupsim.append(5 - lendiff)
             
         # Penalize sentences that have wildly different lengths
-        simscore -= (min(0, abs(lendiff)) * min(0, abs(lendiff)))
+        if(lendiff >= 4):
+            simscore -= lendiff ** 1.5
         
         ssnum = 0
         qacttags = 0
         posnum = 0.0
         
         #Important dependencies
-        impdep = ['amod', 'nn', 'nsubj', 'conj', 'attr', 'root', 'appos', 'dobj', 'neg', 'num',
-                   'pobj', 'poss', 'preconj', 'predet', 'quantmod', 'tmod']
+        notimpdep = ['abbrev', 'attr', 'aux', 'auxpass', 'det', 'expl', 'mwe', 'possesive', 'punct']
         for j in xrange(0, len(qsst)):
             postag = qpos[j]
             if(re.match(r'(.*NNP)|(.*NNPS)', postag) != None and postag in ppos):
@@ -77,9 +77,9 @@ def filter(index, qpostags, qdependencies, qsstags, ppostags, pdependencies, pss
             dep = qdep[j] 
             depname = dep[0]
             if(dep in pdep):
-                simscore += 3
-                if(depname in impdep):
-                    simscore += 7
+                simscore += 8
+                if(depname in notimpdep):
+                    simscore -= 6
         
         threshold = 1
         if(simscore >= threshold):
