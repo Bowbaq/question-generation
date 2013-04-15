@@ -51,6 +51,13 @@ public class QuestionAskerTool extends BaseTool {
 	@Override
 	public void run() {
 		String input = getDocumentFromStdin();
+
+		String[] split = input.split("\nSee also\n\n");
+
+		if (split.length == 2) {
+			input = split[0];
+		}
+
 		try {
 			// Segment document into sentences
 			final List<String> sentences = AnalysisUtilities.getSentences(input);
@@ -101,7 +108,7 @@ public class QuestionAskerTool extends BaseTool {
 		max_question_length = Integer.parseInt(options.getProperty("max-question-length"));
 
 		drop_pronouns = (null == options.getProperty("keep-pronouns"));
-		if (null != options.getProperty("downweight-pronouns")) {
+		if (null != options.getProperty("downweight-pronouns") && options.getProperty("downweight-pronouns").equals("true")) {
 			drop_pronouns = false;
 			downweight_pronouns = true;
 		}

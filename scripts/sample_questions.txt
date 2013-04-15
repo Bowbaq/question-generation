@@ -1,0 +1,73 @@
+team_id	qns_id	article_title	path	qns_difficulty_by_questioner	qns_text	is_disfluent?	is_bad_qns?	answer	qns_difficulty_by_answerer
+Ugrad 11	1	Hindi	set3/a3	hard	For what reason is Dwivedi Yug named after Mahavir Prasad Dwivedi?	False	False	Because he played a major role in establishing the Modern Hindi language in poetry and broadening the acceptable subjects of Hindi poetry from the traditional ones of religion and romantic love	medium
+Ugrad 11	1	Hindi	set3/a3	hard	For what reason is Dwivedi Yug named after Mahavir Prasad Dwivedi?	False	False	He played a major role in establishing the Modern Hindi language in poetry	medium
+Ugrad 11	2	Hindi	set3/a3	hard	Why is Hindi entitled to a representation on the Official Language Commission in India?	False	False	Because it is one of the twenty-two languages of the Eighth Schedule of the Constitution of India	medium
+Ugrad 11	2	Hindi	set3/a3	hard	Why is Hindi entitled to a representation on the Official Language Commission in India?	False	False	It is one of the twenty-two languages of the Eighth Schedule of the Constitution of Indian	medium
+Ugrad 11	3	Hindi	set3/a3	hard	Why can some non-native Hindi speakers understand Hindi easily?	False	False	Because their native language is close to Hindi, as it also originated from various Prakrit languages	hard
+Ugrad 11	3	Hindi	set3/a3	hard	Why can some non-native Hindi speakers understand Hindi easily?	False	False	It is close to their native languages that also originated from various Prakrit languages	medium
+Ugrad 11	4	Hindi	set3/a3	medium	What day is Hindi Day?	False	False	14 September	medium
+Ugrad 11	4	Hindi	set3/a3	medium	What day is Hindi Day?	False	False	14 September	hard
+Ugrad 11	5	Hindi	set3/a3	medium	What language is used as an official language along with Hindi?	False	False	English	medium
+Ugrad 11	5	Hindi	set3/a3	medium	What language is used as an official language along with Hindi?	False	False	English	medium
+Ugrad 11	6	Hindi	set3/a3	medium	In what century did Hindi literature see a romantic upsurge?	False	False	The 20th century	medium
+Ugrad 11	6	Hindi	set3/a3	medium	In what century did Hindi literature see a romantic upsurge?	False	False	20th	medium
+Ugrad 11	7	Hindi	set3/a3	easy	Is Hindi spoken in Uganda?	False	False	No	easy
+Ugrad 11	7	Hindi	set3/a3	easy	Is Hindi spoken in Uganda?	False	False	No	hard
+Ugrad 11	8	Hindi	set3/a3	easy	Is Hindi the native language of the people of Haryana?	False	False	Yes	easy
+Ugrad 11	8	Hindi	set3/a3	easy	Is Hindi the native language of the people of Haryana?	False	False	Yes	easy
+Ugrad 11	9	Hindi	set3/a3	easy	Is Hindi the fourth-largest language in the world?	False	False	No, but it may be the fifth-largest	hard
+Ugrad 11	9	Hindi	set3/a3	easy	Is Hindi the fourth-largest language in the world?	False	False	No	easy
+Ugrad 11	10	The_Artist_(film)	set4/a1	hard	Which film is the most awarded in French history?	False	False	The Artist	medium
+Ugrad 11	10	The_Artist_(film)	set4/a1	hard	Which film is the most awarded in French history?	False	False	The Artist	medium
+Ugrad 11	11	The_Artist_(film)	set4/a1	hard	Was Peppy's endeavor more successful than Valentin's?	False	False	Yes	hard
+Ugrad 11	11	The_Artist_(film)	set4/a1	hard	Was Peppy's endeavor more successful than Valentin's?	False	False	Yes	hard
+Ugrad 11	12	The_Artist_(film)	set4/a1	hard	What do Peppy and Valentin end up doing together?	False	False	Working together	too hard
+Ugrad 11	12	The_Artist_(film)	set4/a1	hard	What do Peppy and Valentin end up doing together?	False	False	make a musical	too hard
+Ugrad 11	13	The_Artist_(film)	set4/a1	medium	When does the first scene of the film take place?	False	False	1927	hard
+Ugrad 11	13	The_Artist_(film)	set4/a1	medium	When does the first scene of the film take place?	False	False	1927	hard
+Ugrad 11	14	The_Artist_(film)	set4/a1	medium	How many Academy Awards did The Artist win?	False	False	five	medium
+Ugrad 11	14	The_Artist_(film)	set4/a1	medium	How many Academy Awards did The Artist win?	False	False	five	medium
+Ugrad 11	15	The_Artist_(film)	set4/a1	medium	What is the name of the main Character in the film?	True	False	Valentin or Peppy?	too hard
+Ugrad 11	15	The_Artist_(film)	set4/a1	medium	What is the name of the main Character in the film?	False	False	Valentin or Peppy	too hard
+Ugrad 11	16	The_Artist_(film)	set4/a1	easy	Is the artist a color movie?	False	False	No	easy
+Ugrad 11	16	The_Artist_(film)	set4/a1	easy	Is the artist a color movie?	False	False	no	medium
+Ugrad 11	17	The_Artist_(film)	set4/a1	easy	Was The Artist directed by Michel Hazanavicius?	False	False	Yes	easy
+Ugrad 11	17	The_Artist_(film)	set4/a1	easy	Was The Artist directed by Michel Hazanavicius?	False	False	yes	easy
+Ugrad 11	18	The_Artist_(film)	set4/a1	easy	Did Jean Dujardin star in The Artist?	False	False	Yes	easy
+Ugrad 11	18	The_Artist_(film)	set4/a1	easy	Did Jean Dujardin star in The Artist?	False	False	yes	easy
+Ugrad 11	19	Cristiano_Ronaldo	set1/a8	hard	Who are Cristiano's parents?	True	False	Jose Dinis and ?	too hard
+Ugrad 11	19	Cristiano_Ronaldo	set1/a8	hard	Who are Cristiano's parents?	False	False	Jos� Dinis Aveiro and Maria Dolores dos Santos Aveiro	hard
+Ugrad 11	20	Cristiano_Ronaldo	set1/a8	hard	Why was the 2006-2007 season so good for Ronaldo?	False	False	he broke the 20 goal barrier for the first time and picked up his first league title with Manchester United.	hard
+Ugrad 11	20	Cristiano_Ronaldo	set1/a8	hard	Why was the 2006-2007 season so good for Ronaldo?	False	False	Because he broke the 20 goal barrier for the first time and picked up his first league title with Manchester United	medium
+Ugrad 11	21	Cristiano_Ronaldo	set1/a8	hard	How would Ronaldo prefer to be remembered?	False	False	as a role model 	medium
+Ugrad 11	21	Cristiano_Ronaldo	set1/a8	hard	How would Ronaldo prefer to be remembered?	False	False	He would prefer to be remembered as a role model 	medium
+Ugrad 11	22	Cristiano_Ronaldo	set1/a8	medium	What is the name of Ronaldo's fashion boutique?	False	False	CR7	medium
+Ugrad 11	22	Cristiano_Ronaldo	set1/a8	medium	What is the name of Ronaldo's fashion boutique?	False	False	CR7	medium
+Ugrad 11	23	Cristiano_Ronaldo	set1/a8	medium	Where was Ronaldo born?	False	False	Santo Ant�nio	medium
+Ugrad 11	23	Cristiano_Ronaldo	set1/a8	medium	Where was Ronaldo born?	False	False	In Santo Ant�nio, a neighbourhood of Funchal, Madeira	medium
+Ugrad 11	24	Cristiano_Ronaldo	set1/a8	medium	When did Ronaldo announce that he had become a father?	False	False	3 July 2010	medium
+Ugrad 11	24	Cristiano_Ronaldo	set1/a8	medium	When did Ronaldo announce that he had become a father?	False	False	3 July 2010	medium
+Ugrad 11	25	Cristiano_Ronaldo	set1/a8	easy	Is Ronaldo dating Iryna Shayk?	False	True	Yes	easy
+Ugrad 11	25	Cristiano_Ronaldo	set1/a8	easy	Is Ronaldo dating Iryna Shayk?	False	False	Yes	hard
+Ugrad 11	26	Cristiano_Ronaldo	set1/a8	easy	Was Ronaldo a youth player for Andorinha?	False	False	Yes	easy
+Ugrad 11	26	Cristiano_Ronaldo	set1/a8	easy	Was Ronaldo a youth player for Andorinha?	False	False	Yes	easy
+Ugrad 11	27	Cristiano_Ronaldo	set1/a8	easy	Is Ronaldo the most expensive footballer in history?	False	False	yes	easy
+Ugrad 11	27	Cristiano_Ronaldo	set1/a8	easy	Is Ronaldo the most expensive footballer in history?	False	False	Yes	easy
+Ugrad 11	28	Andromeda_(constellation)	set2/a3	hard	Is Andromeda larger than the full moon?	False	False	Yes	easy
+Ugrad 11	28	Andromeda_(constellation)	set2/a3	hard	Is Andromeda larger than the full moon?	False	False	Yes	
+Ugrad 11	29	Andromeda_(constellation)	set2/a3	hard	Why did Athena place Andromeda in the sky?	False	False	To honor her	medium
+Ugrad 11	29	Andromeda_(constellation)	set2/a3	hard	Why did Athena place Andromeda in the sky?	False	False	To honor her after her death	medium
+Ugrad 11	30	Andromeda_(constellation)	set2/a3	hard	What would happen as a result of an Andromeda-Milky Way collision?	False	False	Create a new star formation	medium
+Ugrad 11	30	Andromeda_(constellation)	set2/a3	hard	What would happen as a result of an Andromeda-Milky Way collision?	False	False	Extensive new star formation	medium
+Ugrad 11	31	Andromeda_(constellation)	set2/a3	medium	What is the brightest star in the Andromeda constellation?	False	False	Alpha Andromedae	medium
+Ugrad 11	31	Andromeda_(constellation)	set2/a3	medium	What is the brightest star in the Andromeda constellation?	False	False	Alpha Andromedae	medium
+Ugrad 11	32	Andromeda_(constellation)	set2/a3	medium	What are the Andromeda galaxy's two main companions?	False	False	M32 and M110	medium
+Ugrad 11	32	Andromeda_(constellation)	set2/a3	medium	What are the Andromeda galaxy's two main companions?	False	False	M32 and M110	medium
+Ugrad 11	33	Andromeda_(constellation)	set2/a3	medium	What is the prominent planetary nebula in Andromeda?	False	False	NGC 7662 (Caldwell 22)	medium
+Ugrad 11	33	Andromeda_(constellation)	set2/a3	medium	What is the prominent planetary nebula in Andromeda?	False	False	NGC 7662 (Caldwell 22)	medium
+Ugrad 11	34	Andromeda_(constellation)	set2/a3	easy	Is Andromeda visible south of 40� south latitude?	False	False	No	easy
+Ugrad 11	34	Andromeda_(constellation)	set2/a3	easy	Is Andromeda visible south of 40� south latitude?	False	False	No	easy
+Ugrad 11	35	Andromeda_(constellation)	set2/a3	easy	Is Alpha Andromedae a binary star?	False	False	Yes	easy
+Ugrad 11	35	Andromeda_(constellation)	set2/a3	easy	Is Alpha Andromedae a binary star?	False	False	Yes	easy
+Ugrad 11	36	Andromeda_(constellation)	set2/a3	easy	Is the Blue Snowball Nebula visible in a telescope?	False	False	Yes	easy
+Ugrad 11	36	Andromeda_(constellation)	set2/a3	easy	Is the Blue Snowball Nebula visible in a telescope?	False	False	Yes	easy
