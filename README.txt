@@ -1,4 +1,4 @@
-# requires python, java
+# requires python 2.7+, java
 
 # To generate questions type
 ./ask scripts/sample.txt 15
