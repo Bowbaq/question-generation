@@ -4,7 +4,11 @@ import sys
 import os.path
 import subprocess
 
+debug = '2>/dev/null'
+
 def init():
+    global debug
+    
     args = sys.argv[1:]
     valid_args = True
     
@@ -28,12 +32,16 @@ def init():
         print args[1], "is not a valid positive integer"
         
     if valid_args:
+        if len(args) == 3 and args[2] == '--debug':
+            debug = ''
+        
         return args[0], int(args[1])
     else:
         sys.exit(1)
 
 article_path, nquestions = init()
-cmd = './scripts/run.sh question-asker --debug 2>/dev/null < %s' % article_path
+cmd = './scripts/run.sh question-asker --debug %s < %s' % (debug, article_path)
+print cmd
 
 output = subprocess.check_output(cmd, shell=True)
 

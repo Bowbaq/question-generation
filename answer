@@ -5,7 +5,11 @@ import os.path
 import subprocess
 from queditdistance import processquestions
 
+debug = '2>/dev/null'
+
 def init():
+    global debug
+    
     args = sys.argv[1:]
     valid_args = True
     
@@ -14,18 +18,21 @@ def init():
         print "Usage: ./answer <path/to/article> <path/to/questions>"
         sys.exit(-1)
     
-    for arg in args:
+    for arg in args[:2]:
         if not os.path.isfile(arg):
             valid_args = False
             print arg, "is not a valid file"
     
     if valid_args:
+        if len(args) == 3 and args[2] == '--debug':
+            debug = ''
+        
         return args[0], args[1]
     else:
         sys.exit(1)
 
 def run_question_asker(path):
-    cmd = './scripts/run.sh question-asker --debug 2>/dev/null < %s' % path
+    cmd = './scripts/run.sh question-asker --debug %s < %s' % (debug, path)
     output = subprocess.check_output(cmd, shell=True)
 
     questions = []
@@ -41,7 +48,7 @@ def run_question_asker(path):
     return questions, answers
     
 def run_question_answerer(data):
-    cmd = './scripts/run.sh question-answerer 2>/dev/null'
+    cmd = './scripts/run.sh question-answerer %s' % debug
     p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = p.communicate('\n'.join(data))
     
