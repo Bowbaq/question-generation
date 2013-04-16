@@ -26,3 +26,4 @@ local.properties
 .buildpath
 
 nlp-toolbelt.jar
+*.pyc

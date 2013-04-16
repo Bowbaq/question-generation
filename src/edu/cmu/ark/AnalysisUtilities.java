@@ -40,6 +40,8 @@ import edu.cmu.ark.util.StanfordParserClient;
 import edu.cmu.ark.util.VerbConjugator;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.Label;
+import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
+import edu.stanford.nlp.parser.lexparser.Options;
 import edu.stanford.nlp.process.DocumentPreprocessor;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.LabeledScoredTreeFactory;
@@ -54,14 +56,19 @@ import edu.stanford.nlp.trees.tregex.tsurgeon.TsurgeonPattern;
 import edu.stanford.nlp.util.Pair;
 
 public class AnalysisUtilities {
-	private final static StanfordParserClient		parser_client;
+	private final static LexicalizedParser			parser;
 	private final static CollinsHeadFinder			head_finder			= new CollinsHeadFinder();
 	private final static LabeledScoredTreeFactory	tree_factory		= new LabeledScoredTreeFactory();
 	private final static PennTreebankLanguagePack	ptb_language_pack	= new PennTreebankLanguagePack();
 
 	static {
 		VerbConjugator.load_conjugations(GlobalProperties.getProperties().getProperty("verbConjugationsFile", "config" + File.separator + "verbConjugations.txt"));
-		parser_client = new StanfordParserClient("127.0.0.1", 5556);
+		Options op = new Options();
+		String serializedInputFileOrUrl = GlobalProperties.getProperties().getProperty("parserGrammarFile", "config"+File.separator+"englishFactored.ser.gz");
+		parser = new LexicalizedParser(serializedInputFileOrUrl, op);
+		int maxLength = new Integer(GlobalProperties.getProperties().getProperty("parserMaxLength", "40")).intValue();
+		parser.setMaxLength(maxLength);
+		parser.setOptionFlags("-outputFormat", "oneline");
 	}
 
 	public static CollinsHeadFinder getHeadFinder() {
@@ -140,7 +147,26 @@ public class AnalysisUtilities {
 
 	// TODO: Bring back ParseResult / cleanup this method
 	public static ParseResult parseSentence(final String sentence) {
-		return AnalysisUtilities.parser_client.parse(sentence);
+
+	Tree parse;
+	double parseScore;
+	try{
+		if(parser.parse(sentence)){
+			parse = parser.getBestParse();
+			
+			//remove all the parent annotations (this is a hacky way to do it)
+			String ps = parse.toString().replaceAll("\\[[^\\]]+/[^\\]]+\\]", "");
+			parse = AnalysisUtilities.readTreeFromString(ps);
+			
+			parseScore = parser.getPCFGScore();
+			return new ParseResult(true, parse, parseScore);
+		}
+	}catch(Exception e){
+	}
+
+	parse = readTreeFromString("(ROOT (. .))");
+    parseScore = -99999.0;
+    return new ParseResult(false, parse, parseScore);
 	}
 
 	public static Tree readTreeFromString(final String parseStr) {
@@ -333,7 +359,7 @@ public class AnalysisUtilities {
 		sentence = sentence.replaceAll("ù|ú|û|ü", "u");
 		sentence = sentence.replaceAll("Ù|Ú|Û|Ü", "U");
 		sentence = sentence.replaceAll("ñ", "n");
-		sentence = sentence.replaceAll("� ���", "");
+		sentence = sentence.replaceAll("� ���", "");
 
 		// contractions
 		sentence = sentence.replaceAll("can't", "can not");

@@ -3,7 +3,7 @@
 import sys
 import os.path
 import subprocess
-from qeditdistance import processquestions
+from queditdistance import processquestions
 
 def init():
     args = sys.argv[1:]
@@ -46,18 +46,51 @@ def run_question_answerer(data):
     stdout, stderr = p.communicate('\n'.join(data))
     
     return stdout
+
+def parse_output(output):
+    questions = []
+    postags = []
+    dependencies = []
+    sstags = []
     
+    for part in output.strip().split('\n\n'):
+        question, pos, deps, ss = part.split('\n')
+        
+        questions.append(question);
+        postags.append(pos[1:-1].split(', '))
+        
+        # print deps[1:-1]
+        over_split = deps[1:-1].split(', ')
+        dep_list = []
+        current_dep = ''
+        for dep_part in over_split:
+            if current_dep == '':
+                current_dep = dep_part + ', '
+            elif dep_part[-1] == ')':
+                dep_list.append(current_dep + dep_part)
+                current_dep = ''
+            else:
+                current_dep += dep_part + ', '
+        
+        dependencies.append(dep_list)
+        
+        sstags.append(ss[1:-1].split(', '))
+    
+    return {
+        'questions': questions,
+        'postags': postags,
+        'deptags': dependencies,
+        'sstags': sstags
+    }    
     
 article_path, questions_path = init()
 
-questions, answers = run_question_asker(article_path)
+generated_questions, generated_answers = run_question_asker(article_path)
 
 with open(questions_path) as asked_questions_file:
     asked_questions = asked_questions_file.read().split('\n')
 
-    generated_questions_output = run_question_answerer(questions)
+    generated_questions_output = run_question_answerer(generated_questions)
     asked_questions_output = run_question_answerer(asked_questions)
     
-    # print generated_questions_output, '\n'.join(answers), asked_questions_output
-    
-    processquestions(asked_questions_output, generated_questions_output, '\n'.join(answers))
+    processquestions(parse_output(asked_questions_output),  parse_output(generated_questions_output), generated_answers)
