@@ -1,9 +1,10 @@
 # requires python 2.7+, java
 
-# To generate questions type
+# Generate questions (example), expected runtime ~2min
 ./ask scripts/sample.txt 15
-# where n is the number of questions
 
-# To answer questions, type:
+# Answer questions (example), expected runtime ~5min
 ./answer scripts/sample.txt scripts/questions.txt
+
+# If the runtime seems really long, the GHC machine is probably bogged down by a hadoop job or some such thing
 
