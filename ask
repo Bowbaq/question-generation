@@ -41,7 +41,6 @@ def init():
 
 article_path, nquestions = init()
 cmd = './scripts/run.sh question-asker --debug %s < %s' % (debug, article_path)
-print cmd
 
 output = subprocess.check_output(cmd, shell=True)
 
