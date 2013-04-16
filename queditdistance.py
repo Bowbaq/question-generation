@@ -89,7 +89,7 @@ def filter(index, qpostags, qdependencies, qsstags, ppostags, pdependencies, pss
     if(len(pquestionsi) == 0):
         if(len(backupsim) != 0): 
             pquestionsi = backupi
-            pquestionsim = backupsim
+            pquestionssim = backupsim
         else:
             pquestionsi = [0]
             pquestionssim = [0]
@@ -117,7 +117,8 @@ def processquestions(qdict, pdict, alist):
     assert(len(alist) == len(ppostags))
 
     for i in xrange(0, len(qpostags)):
-        (pquestionsi, pquestionssim) = filter(i, qpostags, qdependencies, qsstags, ppostags, pdependencies, psstags)
+        pquestionsi, pquestionssim = filter(i, qpostags, qdependencies, qsstags, ppostags, pdependencies, psstags)
+
         #print pquestions
         if(len(pquestionsi) == 1): 
             closest_index = 0
@@ -154,4 +155,4 @@ def processquestions(qdict, pdict, alist):
                 assocq = psquestions[closest_index]
             #outputfile.write(answer + '\n')
         #print "Question is \"%s\" and answer is \"%s\".  Question associated with answer is \"%s\"\n" % (questions[i], answer, assocq)
-    print answer
+        print answer
