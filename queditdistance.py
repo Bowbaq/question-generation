@@ -153,6 +153,4 @@ def processquestions(qdict, pdict, alist):
                     high_sim = sim
                 answer = alist[closest_index]
                 assocq = psquestions[closest_index]
-            #outputfile.write(answer + '\n')
-        #print "Question is \"%s\" and answer is \"%s\".  Question associated with answer is \"%s\"\n" % (questions[i], answer, assocq)
         print answer

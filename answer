@@ -66,7 +66,6 @@ def parse_output(output):
         questions.append(question);
         postags.append(pos[1:-1].split(', '))
         
-        # print deps[1:-1]
         over_split = deps[1:-1].split(', ')
         dep_list = []
         current_dep = ''
@@ -82,7 +81,7 @@ def parse_output(output):
         dependencies.append(dep_list)
         
         sstags.append(ss[1:-1].split(', '))
-    
+
     return {
         'questions': questions,
         'postags': postags,
@@ -98,6 +97,9 @@ with open(questions_path) as asked_questions_file:
     asked_questions = asked_questions_file.read().split('\n')
 
     generated_questions_output = run_question_answerer(generated_questions)
+    generated_questions_data = parse_output(generated_questions_output)
+
     asked_questions_output = run_question_answerer(asked_questions)
+    asked_questions_data = parse_output(asked_questions_output)
     
-    processquestions(parse_output(asked_questions_output),  parse_output(generated_questions_output), generated_answers)
+    processquestions(asked_questions_data, generated_questions_data, generated_answers)

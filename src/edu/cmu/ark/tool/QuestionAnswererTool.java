@@ -32,16 +32,17 @@ public class QuestionAnswererTool extends BaseTool {
 
 		try {
 			// Segment document into sentences
-			final List<String> sentences = AnalysisUtilities.getSentences(input);
+			final String[] sentences = input.split("\n");
 
 			// Parse individual sentences
 			for (final String sentence : sentences) {
-				Tree parse = AnalysisUtilities.parseSentence(sentence).getTree();
+				String clean_sentence = AnalysisUtilities.preprocess(sentence);
+				Tree parse = AnalysisUtilities.parseSentence(clean_sentence).getTree();
 				GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
 				Collection<TypedDependency> tdl = gs.typedDependenciesCollapsed();
 				List<String> super_senses = SuperSenseWrapper.getInstance().annotateSentenceWithSupersenses(parse);
 
-        System.out.println(sentence);
+				System.out.println(clean_sentence);
 				System.out.println(parse.labeledYield());
 				System.out.println(tdl);
 				System.out.println(super_senses + "\n");
